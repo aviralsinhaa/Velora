@@ -57,7 +57,7 @@ export function generateItinerary(config: ItineraryConfig): {
       day: 'Day 02',
       time: '11:00',
       title: 'Inner Lagoon Snorkeling & Coral Garden Drift',
-      description: 'Gentle exploration across the shallow reef with personal marine guide.',
+      description: 'Gentle exploration across the calm shallow reef and living coral gardens.',
     });
   }
 

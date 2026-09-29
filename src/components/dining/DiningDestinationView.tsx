@@ -197,6 +197,7 @@ export function DiningDestinationView({
                         id: venue.id,
                       })
                     }
+                    data-focus-id={`dining-venue-concierge-${venue.id}`}
                     className="editorial-link text-xs uppercase tracking-[0.2em]"
                   >
                     <span>Ask Concierge About {venue.name} ✦</span>

@@ -469,7 +469,7 @@ export const veloraResort: ResortConfig = {
         'Daily Sunrise Ocean Meditation & Private Pranayama Yoga',
         'Custom Curated Plant-Forward Nutrition & Cold-Pressed Tonics',
         'Tibetan Sound & Water Meditation under the Full Moon Pavilion',
-        'House Reef Snorkeling & Guided Marine Exploration',
+        'House Reef Snorkeling & Marine Exploration',
       ],
       image: RESORT_MEDIA.wellness.waterPavilion,
       idealFor: 'Mindfulness, High-Focus Executives & Deep Rejuvenation',
@@ -482,8 +482,8 @@ export const veloraResort: ResortConfig = {
       duration: '5 Nights Minimum',
       inclusions: [
         'Curated Private Catamaran Sailing Excursions',
-        'Guided Outer Drop-Off & Marine Exploration',
-        'Underwater Photography Session with Ocean Guide',
+        'Outer Drop-Off & Marine Exploration',
+        'Underwater Photography Session',
         'Night Dive Experience with Bioluminescent Plankton',
         'Daily In-Villa Bespoke Tasting Menus',
       ],
@@ -548,7 +548,7 @@ export const veloraResort: ResortConfig = {
       {
         type: 'Private Yacht Alternative (From Maafaru)',
         duration: '25 Minutes',
-        description: 'For private jet arrivals into Maafaru International Airport (NMF), private boat transfers can be coordinated directly across pristine waters to your villa jetty.',
+        description: 'For private jet arrivals into Maafaru International Airport (NMF), boat-based transfers can be planned directly across pristine waters to your villa jetty within the arrival concept.',
       },
     ],
     coordinatesNote: 'Located in Noonu Atoll, Republic of Maldives.',

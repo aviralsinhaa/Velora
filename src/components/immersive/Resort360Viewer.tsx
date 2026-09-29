@@ -168,7 +168,11 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
       }
       renderer.dispose();
       renderer.forceContextLoss();
-      if (lastActiveElementRef.current && typeof lastActiveElementRef.current.focus === 'function') {
+      if (
+        lastActiveElementRef.current &&
+        document.body.contains(lastActiveElementRef.current) &&
+        typeof lastActiveElementRef.current.focus === 'function'
+      ) {
         lastActiveElementRef.current.focus();
       }
     };

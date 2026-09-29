@@ -65,7 +65,11 @@ export function BookingModal({
     return () => {
       document.body.style.overflow = prevOverflow;
       window.removeEventListener('keydown', handleKeyDown);
-      if (lastActiveElementRef.current && typeof lastActiveElementRef.current.focus === 'function') {
+      if (
+        lastActiveElementRef.current &&
+        document.body.contains(lastActiveElementRef.current) &&
+        typeof lastActiveElementRef.current.focus === 'function'
+      ) {
         lastActiveElementRef.current.focus();
       }
     };
@@ -158,13 +162,13 @@ export function BookingModal({
 
               <div className="space-y-2">
                 <span className="text-[10px] uppercase tracking-[0.25em] text-[#dfcaa3] font-sans">
-                  STAY INQUIRY PREPARED
+                  STAY PREFERENCES PREPARED
                 </span>
                 <h4 className="font-editorial text-2xl sm:text-3xl text-white font-light">
                   YOUR STAY REQUEST IS READY
                 </h4>
                 <p className="font-sans text-xs sm:text-sm text-white/70 leading-relaxed font-light">
-                  We&apos;ve kept your selected villa and stay preferences together. Availability would be confirmed before the stay is finalized.
+                  Your stay preferences are prepared together for review. Availability would be confirmed before any stay is finalized.
                 </p>
               </div>
 

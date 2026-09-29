@@ -56,11 +56,11 @@ export function PracticalInfoView({
     },
     {
       q: 'What scuba diving experience is required?',
-      a: 'Our house reef accommodates snorkelers and divers of all levels. Certified divers may be asked to provide relevant certification for advanced outer-channel dive activities. Orientation dives and introductory discover scuba sessions can also be arranged during your stay.',
+      a: 'Our house reef accommodates snorkelers and divers of all levels. Certified divers may be asked to provide relevant certification for advanced outer-channel dive activities. Introductory lagoon orientation can be considered before outer-reef activities.',
     },
     {
       q: 'How does the Stay Request process work?',
-      a: 'As Velora is an exclusive private island concept, submitting a request initiates a dedicated stay inquiry. We preserve your preferred dates, villa selection, and guest details to prepare your stay arrangements.',
+      a: 'As Velora is an exclusive private island concept, your stay preferences are prepared together for review. We preserve your preferred dates, villa selection, and guest details to prepare your stay arrangements.',
     },
   ];
 

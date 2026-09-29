@@ -212,6 +212,7 @@ export function WellnessDestinationView({
                         }
                       )
                     }
+                    data-focus-id={`wellness-ritual-concierge-${r.id}`}
                     className="text-[11px] uppercase tracking-[0.2em] text-[#dfcaa3] hover:text-white transition-colors font-sans"
                   >
                     Include in Stay ✦

@@ -33,7 +33,7 @@ export function GettingHereDestinationView({
       step: '01',
       title: 'Arrival in Malé (MLE)',
       subtitle: 'Velana International Airport',
-      desc: 'Upon arrival at Velana International Airport in Malé, seaplane connections are arranged for transit northbound to Noonu Atoll.',
+      desc: 'The concept assumes an approximately 45-minute seaplane connection from Velana International Airport in Malé northbound to Noonu Atoll.',
     },
     {
       step: '02',
@@ -203,7 +203,7 @@ export function GettingHereDestinationView({
                 <span>Departure Coordination</span>
               </div>
               <p className="text-white/70 leading-relaxed">
-                Your departure transfer is coordinated based on your international flight departure timing from Velana International Airport (MLE).
+                Departure transfer timing would be planned around your international flight departure timing from Velana International Airport (MLE).
               </p>
             </div>
           </div>

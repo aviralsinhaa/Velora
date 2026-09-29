@@ -5,9 +5,9 @@ import { ArrowLeft, Compass, Check, Sparkles, X } from 'lucide-react';
 interface VillaDetailViewProps {
   villa: Villa;
   onClose: () => void;
-  onRequestStay: (villaId: string) => void;
-  onOpen360: (sceneId: string) => void;
-  onAskConcierge: (prompt: string, contextVillaId: string) => void;
+  onRequestStay: (villaId: string, sourceFocusId?: string) => void;
+  onOpen360: (sceneId: string, sourceFocusId?: string) => void;
+  onAskConcierge: (prompt: string, contextVillaId: string, sourceFocusId?: string) => void;
   onCompareVillas: () => void;
   onSelectOtherVilla: (villaId: string) => void;
   allVillas: Villa[];
@@ -93,9 +93,9 @@ export function VillaDetailView({
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
-            onClick={() => onAskConcierge(`Tell me more about the ${villa.name}. Is it right for us?`, villa.id)}
+            onClick={() => onAskConcierge(`Tell me more about the ${villa.name}. Is it right for us?`, villa.id, 'villa-detail-concierge-header')}
             data-cursor="CONCIERGE"
-            data-focus-id="villa-detail-concierge"
+            data-focus-id="villa-detail-concierge-header"
             className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -103,9 +103,9 @@ export function VillaDetailView({
           </button>
 
           <button
-            onClick={() => onRequestStay(villa.id)}
+            onClick={() => onRequestStay(villa.id, 'villa-detail-request-header')}
             data-cursor="REQUEST"
-            data-focus-id="villa-detail-request"
+            data-focus-id="villa-detail-request-header"
             className="px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.2em] font-sans font-medium transition-all shadow-md hover:scale-105 active:scale-95 whitespace-nowrap"
           >
             REQUEST THIS VILLA
@@ -162,7 +162,7 @@ export function VillaDetailView({
 
               {villa.panoramaSceneId && (
                 <button
-                  onClick={() => onOpen360(villa.panoramaSceneId!)}
+                  onClick={() => onOpen360(villa.panoramaSceneId!, 'villa-detail-360')}
                   data-cursor="360°"
                   data-focus-id="villa-detail-360"
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/70 hover:bg-black/95 border border-white/20 text-white text-xs uppercase tracking-[0.2em] font-sans backdrop-blur-md transition-all hover:scale-105"
@@ -271,15 +271,17 @@ export function VillaDetailView({
 
               <div className="pt-4 space-y-3">
                 <button
-                  onClick={() => onRequestStay(villa.id)}
+                  onClick={() => onRequestStay(villa.id, 'villa-detail-request-primary')}
                   data-cursor="REQUEST"
+                  data-focus-id="villa-detail-request-primary"
                   className="w-full py-4 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.24em] font-medium transition-all shadow-lg hover:scale-[1.02] active:scale-95 text-center block"
                 >
                   REQUEST THIS VILLA
                 </button>
 
                 <button
-                  onClick={() => onAskConcierge(`Plan five nights for two in the ${villa.name}`, villa.id)}
+                  onClick={() => onAskConcierge(`Plan five nights for two in the ${villa.name}`, villa.id, 'villa-detail-concierge-plan')}
+                  data-focus-id="villa-detail-concierge-plan"
                   className="w-full py-3.5 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 font-sans text-xs uppercase tracking-[0.2em] transition-all text-center block"
                 >
                   Plan Stay with Concierge ✦

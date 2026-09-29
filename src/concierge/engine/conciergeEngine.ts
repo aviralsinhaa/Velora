@@ -7,7 +7,7 @@
 import { normalizeInput } from './normalize';
 import { correctTypos } from './fuzzy';
 import { extractEntities } from './entities';
-import { detectIntent } from './intents';
+import { detectIntent, isExplicitVillaSelection } from './intents';
 import { composeResponse, ComposedResponse } from './responseComposer';
 import { TripState, ConciergeSourceContext } from '../../data/resortContext';
 import {
@@ -83,11 +83,21 @@ export function processConciergeInput(
     nextPendingQuestion = null;
   }
 
+  // Determine if this user turn represents an explicit villa selection
+  let explicitlySelectedVillaId: string | undefined = undefined;
+  if (entities.villaId && isExplicitVillaSelection(rawInput)) {
+    explicitlySelectedVillaId = entities.villaId;
+  }
+
   // 7. Update Trip State
+  // selectedVillaId must ONLY change on genuine user selection, never merely because a villa was discussed or recommended.
   const nextTripState: TripState = {
     ...sessionContext.activeTripState,
     ...(composed.tripState || {}),
-    selectedVillaId: nextVillaContext || sessionContext.activeTripState.selectedVillaId,
+    selectedVillaId:
+      explicitlySelectedVillaId ||
+      composed.tripState?.selectedVillaId ||
+      sessionContext.activeTripState.selectedVillaId,
   };
 
   // 8. Record turns

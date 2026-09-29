@@ -79,7 +79,7 @@ export function MegaMenu({
       image: RESORT_MEDIA.experiences.mantaReefDive,
       tag: 'ATOLL EXPEDITIONS',
       title: 'Reef & Ocean Journeys',
-      desc: 'Guided reef channel dives, sunset catamaran sailing, and deserted sandbanks.',
+      desc: 'Reef channel dives, sunset catamaran sailing, and deserted sandbanks.',
     },
     island: {
       image: RESORT_MEDIA.arrival.aerialAtoll,

@@ -22,7 +22,7 @@ export const RESORT_MEDIA = {
     arrivalJetty: 'https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=2000&q=85', // Teak boardwalk leading to clear lagoon
     seaplaneTransfer: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=85', // Island approach over ring reefs
     seaplaneLagoon: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=2000&q=85', // Low-flying twin otter seaplane over crystal turquoise water
-    lagoonShallows: 'https://images.unsplash.com/photo-1590523741831-ab7e8b8f9c7f?auto=format&fit=crop&w=2000&q=85', // Pristine crystal shallows
+    lagoonShallows: 'https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=2000&q=85', // Pristine crystal shallows at arrival pontoon
   },
 
   // 2. VILLAS (Believable, architecturally cohesive villa families)

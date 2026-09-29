@@ -6,6 +6,39 @@
 import { hasAnySynonym } from './synonyms';
 import { DialogueContext } from './dialogueState';
 import { isRepairTrigger } from './repairEngine';
+import { extractEntities } from './entities';
+
+export function isExplicitVillaSelection(text: string): boolean {
+  const lower = text.toLowerCase().trim();
+  // Queries asking for comparisons, opinions, recommendations, details, or prices are NOT selections
+  if (
+    lower.startsWith('which villa') ||
+    lower.startsWith('what villa') ||
+    lower.includes('best villa') ||
+    lower.includes('recommend') ||
+    lower.includes('tell me about') ||
+    lower.includes('how much') ||
+    lower.includes('price') ||
+    lower.includes('rate') ||
+    lower.includes('compare') ||
+    lower.includes('does it have') ||
+    lower.includes('is it') ||
+    lower.includes('do they') ||
+    lower.includes('details')
+  ) {
+    return false;
+  }
+
+  return (
+    /\b(?:select|choose|pick|book|reserve)\b/i.test(lower) ||
+    /\b(?:i want|we want|i would like|we would like|i'd like|we'd like)\b/i.test(lower) ||
+    /\b(?:let's go with|lets go with|go with|let's do|lets do)\b/i.test(lower) ||
+    /\b(?:i'll take|ill take|we'll take|well take|take the)\b/i.test(lower) ||
+    /\b(?:switch to|change to|change villa to|update villa to|make it the)\b/i.test(lower) ||
+    /\b(?:prefer|preference is)\b/i.test(lower) ||
+    /\b(?:stay in|stay at)\s+(?:the\s+)?(?:sunset|ocean|beach|estate|lagoon|residence|villa)\b/i.test(lower)
+  );
+}
 
 export type ConciergeIntent =
   | 'SOCIAL_GREETING'
@@ -543,7 +576,68 @@ export function detectIntent(
     };
   }
 
+  // 5d-2. Explicit Villa Selection
+  if (isExplicitVillaSelection(lower) && extractEntities(rawInput).villaId) {
+    return {
+      intent: 'VILLA_DETAIL',
+      confidence: 0.99,
+      quality: 'EXACT_PHRASE',
+      subType: 'EXPLICIT_SELECTION',
+    };
+  }
+
   // 5e. Villa Detail Queries
+  if (
+    (lower.includes('tell me about') ||
+      lower.includes('what is the') ||
+      lower.includes('show me') ||
+      lower.includes('details') ||
+      lower.includes('about the') ||
+      lower.includes('explore')) &&
+    extractEntities(rawInput).villaId
+  ) {
+    return {
+      intent: 'VILLA_DETAIL',
+      confidence: 0.95,
+      quality: 'STRONG_PHRASE',
+    };
+  }
+
+  const isSelectedVillaQuery =
+    (lower.includes('which villa') ||
+      lower.includes('what villa') ||
+      lower.includes('which sanctuary') ||
+      lower.includes('what sanctuary') ||
+      lower.includes('which residence') ||
+      lower.includes('what residence') ||
+      lower.includes('what is our villa') ||
+      lower.includes('which is our villa') ||
+      lower.includes('our villa')) &&
+    (lower.includes('selected') ||
+      lower.includes('chosen') ||
+      lower.includes('picked') ||
+      lower.includes('have we') ||
+      lower.includes('did we') ||
+      lower.includes('current'));
+
+  if (
+    isSelectedVillaQuery ||
+    lower.includes('which villa have we selected') ||
+    lower.includes('which villa is selected') ||
+    lower.includes('what villa have we selected') ||
+    lower.includes('what villa is selected') ||
+    lower.includes('which villa did we select') ||
+    lower.includes('villa have we selected') ||
+    lower.includes('villa did we select')
+  ) {
+    return {
+      intent: 'VILLA_DETAIL',
+      confidence: 0.99,
+      quality: 'EXACT_PHRASE',
+      subType: 'SELECTED_VILLA',
+    };
+  }
+
   if (
     lower.includes('do all villas have pools') ||
     lower.includes('do all villas have a pool') ||
@@ -663,7 +757,10 @@ export function detectIntent(
   }
 
   // 5i. Dining
-  const isDiningContext = dialogueContext?.sourceContext?.type === 'dining';
+  const isDiningContext =
+    dialogueContext?.sourceContext?.type === 'dining' ||
+    dialogueContext?.previousAssistantMeta?.topic === 'dining' ||
+    dialogueContext?.currentTopic === 'dining';
   if (
     lower.includes('dining') ||
     lower.includes('restaurant') ||
@@ -673,6 +770,9 @@ export function detectIntent(
     lower.includes('dinner') ||
     lower.includes('breakfast') ||
     lower.includes('lunch') ||
+    lower.includes('menu') ||
+    lower.includes('dishes') ||
+    lower.includes('cuisine') ||
     lower.includes('aura') ||
     lower.includes('ember') ||
     lower.includes('tide') ||
@@ -684,21 +784,26 @@ export function detectIntent(
     lower.includes('sand pavilion') ||
     lower.includes('sandbank dinner') ||
     lower.includes('omakase') ||
-    (isDiningContext && (lower.includes('this') || lower.includes('good') || lower.includes('menu') || lower.includes('tonight')))
+    (isDiningContext && (lower.includes('this') || lower.includes('good') || lower.includes('menu') || lower.includes('tonight') || lower.includes('serve') || lower.includes('what is on') || lower.includes("what's on")))
   ) {
     let subType: string | undefined = undefined;
     if (lower.includes('subsolar') || lower.includes('underwater') || lower.includes('cellar')) {
       subType = 'SUBSOLAR';
     } else if (lower.includes('fire') || lower.includes('smoke') || lower.includes('josper') || lower.includes('grill') || lower.includes('ember')) {
       subType = 'FIRE_SMOKE';
-    } else if (lower.includes('aura') || lower.includes('breakfast') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('aura'))) {
+    } else if (
+      lower.includes('aura') ||
+      lower.includes('breakfast') ||
+      (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('aura')) ||
+      (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('aura'))
+    ) {
       subType = 'AURA';
-    } else if (lower.includes('tide') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('tide'))) {
+    } else if (lower.includes('tide') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('tide')) || (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('tide'))) {
       subType = 'TIDE';
-    } else if (lower.includes('sand pavilion') || lower.includes('sandbank') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('sandbank'))) {
+    } else if (lower.includes('sand pavilion') || lower.includes('sandbank') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('sandbank')) || (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('sandbank'))) {
       subType = 'SAND_PAVILION';
     } else if (isDiningContext) {
-      subType = ((dialogueContext?.sourceContext as any)?.id || 'AURA').toUpperCase();
+      subType = ((dialogueContext?.sourceContext as any)?.id || dialogueContext?.previousAssistantMeta?.subjectId || 'AURA').toUpperCase();
     }
     return {
       intent: 'DINING',

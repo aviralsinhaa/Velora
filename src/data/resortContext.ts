@@ -143,7 +143,7 @@ CONVERSATION PRINCIPLES:
 
 VERIFIED RESORT FACTS:
 - 24 private villas (16 overwater, 8 beachfront) across a broad turquoise coral lagoon in Noonu Atoll, Maldives.
-- Arrival: Approximately 45-minute scenic seaplane journey from Velana International Airport (MLE), or private boat transfer from Maafaru (NMF).
+- Arrival: Approximately 45-minute scenic seaplane journey from Velana International Airport (MLE), or boat-based transfer from Maafaru (NMF).
 
 VILLAS:
 ${villaSummaries}

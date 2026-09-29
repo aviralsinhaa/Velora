@@ -3,7 +3,7 @@
  * Precondition verification, and strict Action Relevance thresholding.
  */
 
-import { ConciergeIntent, IntentMatch } from './intents';
+import { ConciergeIntent, IntentMatch, isExplicitVillaSelection } from './intents';
 import { ExtractedEntities } from './entities';
 import { recommendVilla } from './recommendations';
 import { generateItinerary, ItineraryDay } from './itinerary';
@@ -667,14 +667,14 @@ export function composeResponse(
     if (subType === 'TALK_TO_HUMAN') {
       candidate = {
         type: 'answer',
-        message: "In a live resort deployment, your request would be passed to the guest experience team. Here, I can help you prepare the details.",
+        message: "You can explore island experiences and prepare your stay inquiry directly with me here, or request your stay through our reservation concept.",
         suggestedActions: [
           { type: 'request_stay', label: 'REQUEST YOUR STAY' },
         ],
         perceptualDelayMs: 400,
         responseMeta: {
           type: 'human_contact',
-          text: "In a live resort deployment, your request would be passed to the guest experience team.",
+          text: "You can explore island experiences and prepare your stay inquiry directly with me here, or request your stay through our reservation concept.",
           topic: 'meta',
           intent,
         },
@@ -830,6 +830,103 @@ export function composeResponse(
 
   // 17. Villa Detail Queries
   if (intent === 'VILLA_DETAIL') {
+    if (subType === 'EXPLICIT_SELECTION') {
+      const selectedId = entities.villaId;
+      const targetVilla = selectedId ? veloraResort.villas.find((v) => v.id === selectedId) : undefined;
+
+      if (targetVilla) {
+        const villaDisplayName =
+          targetVilla.id === 'sunset-pool-villa'
+            ? 'Sunset Pool Villa'
+            : targetVilla.id === 'ocean-lagoon-villa'
+            ? 'Ocean Lagoon Villa'
+            : targetVilla.id === 'beach-reserve-residence'
+            ? 'Beach Reserve Residence'
+            : 'The Velora Estate';
+
+        const nextTripState: TripState = {
+          ...currentState,
+          selectedVillaId: targetVilla.id,
+        };
+
+        candidate = {
+          type: 'conversation',
+          message: `I have selected the ${villaDisplayName} for your stay. Would you like to request your stay, view details, or explore the sanctuary in 360°?`,
+          recommendedVillaId: targetVilla.id,
+          tripState: nextTripState,
+          suggestedActions: [
+            { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: targetVilla.id, nights: currentState.nights, guests: currentState.guests },
+            { type: 'open_360', label: '360° TOUR', sceneId: targetVilla.panoramaSceneId || 'sunset-exterior', villaId: targetVilla.id },
+            { type: 'view_villa', label: 'VIEW VILLA', villaId: targetVilla.id },
+          ],
+          perceptualDelayMs: 450,
+          responseMeta: {
+            type: 'villa_detail',
+            subjectId: targetVilla.id,
+            topic: 'villa',
+            hasRecommendation: true,
+            text: `I have selected the ${villaDisplayName} for your stay.`,
+            intent,
+          },
+        };
+        return validateAndSanitizeResponse(candidate, context);
+      }
+    }
+
+    if (subType === 'SELECTED_VILLA') {
+      const activeId = context.activeTripState?.selectedVillaId;
+      const activeVilla = activeId ? veloraResort.villas.find((v) => v.id === activeId) : undefined;
+
+      if (activeVilla) {
+        const villaDisplayName =
+          activeVilla.id === 'sunset-pool-villa'
+            ? 'Sunset Pool Villa'
+            : activeVilla.id === 'ocean-lagoon-villa'
+            ? 'Ocean Lagoon Villa'
+            : activeVilla.id === 'beach-reserve-residence'
+            ? 'Beach Reserve Residence'
+            : 'The Velora Estate';
+
+        candidate = {
+          type: 'conversation',
+          message: `We currently have the ${villaDisplayName} selected for your stay. It features ${activeVilla.size} of ${activeVilla.category} living with ${activeVilla.orientation.toLowerCase()}.`,
+          recommendedVillaId: activeVilla.id,
+          suggestedActions: [
+            { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: activeVilla.id, nights: currentState.nights, guests: currentState.guests },
+            { type: 'open_360', label: '360° TOUR', sceneId: activeVilla.panoramaSceneId || 'sunset-exterior', villaId: activeVilla.id },
+            { type: 'view_villa', label: 'VIEW VILLA', villaId: activeVilla.id },
+          ],
+          perceptualDelayMs: 450,
+          responseMeta: {
+            type: 'villa_detail',
+            subjectId: activeVilla.id,
+            topic: 'villa',
+            hasRecommendation: true,
+            text: `We currently have the ${activeVilla.name} selected for your stay.`,
+            intent,
+          },
+        };
+        return validateAndSanitizeResponse(candidate, context);
+      } else {
+        candidate = {
+          type: 'conversation',
+          message: 'You have not selected a specific villa sanctuary yet. We feature four architectural sanctuaries: the Sunset Pool Villa, Ocean Lagoon Villa, Beach Reserve Residence, and The Velora Estate. Would you like me to recommend one?',
+          suggestedActions: [
+            { label: 'OVERWATER', prompt: 'Which villa is best for sunset?' },
+            { label: 'BEACHFRONT', prompt: 'Tell me about the Beach Reserve Residence.' },
+          ],
+          perceptualDelayMs: 450,
+          responseMeta: {
+            type: 'conversation',
+            topic: 'villa',
+            text: 'You have not selected a specific villa sanctuary yet.',
+            intent,
+          },
+        };
+        return validateAndSanitizeResponse(candidate, context);
+      }
+    }
+
     if (
       subType === 'ALL_POOLS' ||
       lower.includes('all villas have pools') ||
@@ -985,7 +1082,10 @@ export function composeResponse(
 
   // 18. Itinerary Modifications
   if (intent === 'MODIFY_ITINERARY') {
-    const nextVillaId = entities.villaId || currentState.selectedVillaId;
+    const nextVillaId =
+      entities.villaId && isExplicitVillaSelection(rawText)
+        ? entities.villaId
+        : currentState.selectedVillaId;
     const nextNights = entities.nights || currentState.nights || 5;
     const nextGuests = entities.guests || currentState.guests || 2;
     const nextMonth = entities.month || currentState.month || 'December';
@@ -1075,7 +1175,10 @@ export function composeResponse(
       nights,
       guests,
       month,
-      selectedVillaId: recommendation.villa.id,
+      selectedVillaId:
+        entities.villaId && isExplicitVillaSelection(rawText)
+          ? entities.villaId
+          : currentState.selectedVillaId,
       interests: entities.interests,
     };
 
@@ -1153,7 +1256,6 @@ export function composeResponse(
       const sunset = veloraResort.villas[0];
       const nextTripState: TripState = {
         ...currentState,
-        selectedVillaId: sunset.id,
         guests: 2,
       };
 
@@ -1182,7 +1284,6 @@ export function composeResponse(
     const rec = recommendVilla(entities, rawText);
     const nextTripState: TripState = {
       ...currentState,
-      selectedVillaId: rec.villa.id,
       guests: entities.guests || currentState.guests || 2,
     };
 
@@ -1277,7 +1378,7 @@ export function composeResponse(
     const expSource = context.sourceContext?.type === 'experience' ? context.sourceContext.id : undefined;
     const isHouseReef = expSource === 'house-reef-dive' || (expSource && expSource.includes('reef')) || subType === 'REEF_DIVE';
     if (isHouseReef) {
-      msg = 'The House Reef & Outer Drop-Off is well suited for beginners and certified divers alike. Our experienced dive team conducts calm lagoon briefings and gentle orientation dives on the inner reef before venturing out.';
+      msg = 'The House Reef & Outer Drop-Off is well suited for beginners and certified divers alike. For beginners, the concept emphasizes calm lagoon orientation before moving toward the outer reef, with conditions and suitability assessed as part of the experience planning.';
     } else if (subType === 'MANTA') {
       msg = 'Along the northern channel outer drop-off, seasonal currents may bring opportunities to observe reef manta rays and sea turtles. Guided drift excursions explore these channels during favorable morning tides, though wildlife sightings naturally vary with ocean conditions.';
     }
@@ -1333,7 +1434,7 @@ export function composeResponse(
 
     if (canonicalRitual && effectiveRitual === 'velora-ocean-caress') {
       if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning')) {
-        msg = `We recommend scheduling the ${canonicalRitual.title} (${canonicalRitual.duration}) on your arrival day or early in your stay to release travel fatigue. An unhurried afternoon session (available 09:00 – 20:00) allows the warm botanical oils and mineral-rich sea salts to deeply restore your skin and senses for deep relaxation.`;
+        msg = `We recommend scheduling the ${canonicalRitual.title} (${canonicalRitual.duration}) on your arrival day or early in your stay to release travel fatigue. An unhurried afternoon session fits naturally into the suggested wellness rhythm, allowing warm botanical oils and mineral-rich sea salts to deeply restore your skin and senses for deep relaxation.`;
       } else {
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} restorative full-body ceremony. It combines warm botanical oil massage, mineral-rich sea salt exfoliation, and gentle acoustic resonance suspended above the calm lagoon waters to promote deep relaxation and restorative calm.`;
       }
@@ -1356,7 +1457,7 @@ export function composeResponse(
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} journey for deep relaxation and mental clarity. It pairs a rhythmic warm herbal oil stream over the forehead and temples with traditional marma point therapy, releasing tension and cultivating profound sensory stillness.`;
       }
     } else if (subType === 'WATER_PAVILION_AFTERNOON' || lower.includes('afternoon')) {
-      msg = 'Yes, treatments at The Water Pavilion can certainly be arranged in the afternoon (available 09:00 – 20:00). An afternoon session is ideal as the equatorial sun softens and sea breezes flow through the open-air pavilion.';
+      msg = 'An afternoon session fits naturally into the suggested wellness rhythm at The Water Pavilion, as the equatorial sun softens and sea breezes flow through the open-air pavilion.';
     } else if (subType === 'AYURVEDA' || lower.includes('ayurved')) {
       msg = 'Our Ayurvedic-inspired rituals combine warm herb-infused botanical oils and gentle rhythmic massage, tailored to promote deep calm and unhurried rest.';
     }

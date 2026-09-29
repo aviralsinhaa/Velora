@@ -34,6 +34,7 @@ interface PrivateConciergeModalProps {
   initialVillaId?: string;
   sourceContext?: ConciergeSourceContext;
   launchTriggerId?: number;
+  isResume?: boolean;
   onClose: () => void;
   onReserveHandoff: (data: ConciergeHandoffData) => void;
   onOpen360Scene: (sceneId: string) => void;
@@ -66,6 +67,7 @@ export function PrivateConciergeModal({
   initialVillaId,
   sourceContext,
   launchTriggerId,
+  isResume,
   onClose,
   onReserveHandoff,
   onOpen360Scene,
@@ -82,7 +84,6 @@ export function PrivateConciergeModal({
   const [mobileTab, setMobileTab] = useState<'chat' | 'plan'>('chat');
   const lastHandledPromptRef = useRef<string | null>(null);
   const lastHandledTriggerIdRef = useRef<number | null>(null);
-  const prevIsOpenRef = useRef(false);
   const isSessionResetRef = useRef(false);
   const onTripStateChangeRef = useRef(onTripStateChange);
   useEffect(() => {
@@ -182,100 +183,88 @@ export function PrivateConciergeModal({
 
       // Desktop auto-focus
       if (window.innerWidth >= 1024) {
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
         setTimeout(() => {
           inputRef.current?.focus();
-        }, 350);
+        }, 150);
       }
 
       return () => {
         document.body.style.overflow = prevOverflow;
         window.removeEventListener('keydown', handleKeyDown);
-        if (lastActiveElementRef.current && typeof lastActiveElementRef.current.focus === 'function') {
+        if (
+          lastActiveElementRef.current &&
+          document.body.contains(lastActiveElementRef.current) &&
+          typeof lastActiveElementRef.current.focus === 'function'
+        ) {
           lastActiveElementRef.current.focus();
         }
       };
     } else {
       oceanAudio.setConciergeFocus(false);
-      lastHandledPromptRef.current = null;
     }
   }, [isOpen, onClose]);
 
-  // Sync initial villa & source context ONLY when a new launch begins
+  // Launch vs Resume distinction:
+  // On RESUME:
+  // DO NOT rerun:
+  // - selectedVilla initialization
+  // - sourceContext initialization
+  // - initial prompt
+  // - NEW ESCAPE reset
+  // - conversation initialization
+  // - itinerary initialization
+  // Simply reveal the existing session again.
   useEffect(() => {
-    if (isOpen) {
-      if (!prevIsOpenRef.current) {
-        prevIsOpenRef.current = true;
-        isSessionResetRef.current = false;
-
-        // Requirement 1 & 4: If sourceContext.type === 'villa', initialize from sourceContext.id.
-        // Otherwise, use initialVillaId if provided.
-        const launchVillaId =
-          sourceContext?.type === 'villa'
-            ? sourceContext.id
-            : initialVillaId;
-
-        // Requirement 3: Dining / Experience / Wellness / Global source contexts
-        // must NOT clear an already selected trip villa.
-        if (launchVillaId) {
-          setTripState((prev) => {
-            const next = {
-              ...prev,
-              selectedVillaId: launchVillaId,
-            };
-            onTripStateChangeRef.current?.(next);
-            return next;
-          });
-          sessionContextRef.current.lastVillaContext = launchVillaId;
-          sessionContextRef.current.activeTripState.selectedVillaId = launchVillaId;
-        }
-
-        // Always synchronize sourceContext on new launch
-        sessionContextRef.current.sourceContext = sourceContext || { type: 'global' };
-      }
-    } else {
-      prevIsOpenRef.current = false;
-      isSessionResetRef.current = false;
-      lastHandledPromptRef.current = null;
+    if (!isOpen) {
+      return;
     }
-  }, [initialVillaId, sourceContext, isOpen]);
 
-  // Initial prompt trigger (driven by launchTriggerId to support repeated CTA triggers)
-  useEffect(() => {
-    if (initialPrompt && isOpen) {
-      const isNewTrigger =
-        launchTriggerId !== undefined
-          ? lastHandledTriggerIdRef.current !== launchTriggerId
-          : lastHandledPromptRef.current !== initialPrompt;
+    const isResumeSession = Boolean(
+      isResume ||
+      (launchTriggerId !== undefined && lastHandledTriggerIdRef.current === launchTriggerId)
+    );
 
-      if (isNewTrigger) {
-        if (launchTriggerId !== undefined) {
-          lastHandledTriggerIdRef.current = launchTriggerId;
-        }
-        lastHandledPromptRef.current = initialPrompt;
-        isSessionResetRef.current = false;
-
-        // Synchronize sourceContext before processing the contextual initialPrompt
-        sessionContextRef.current.sourceContext = sourceContext || { type: 'global' };
-        const launchVillaId =
-          sourceContext?.type === 'villa'
-            ? sourceContext.id
-            : initialVillaId;
-        if (launchVillaId) {
-          setTripState((prev) => {
-            const next = {
-              ...prev,
-              selectedVillaId: launchVillaId,
-            };
-            onTripStateChangeRef.current?.(next);
-            return next;
-          });
-          sessionContextRef.current.lastVillaContext = launchVillaId;
-          sessionContextRef.current.activeTripState.selectedVillaId = launchVillaId;
-        }
-        handleSendMessage(initialPrompt);
-      }
+    if (isResumeSession) {
+      // RESUME EXISTING SESSION: reveal existing session without re-initialization
+      return;
     }
-  }, [initialPrompt, launchTriggerId, sourceContext, initialVillaId, isOpen]);
+
+    // A. FRESH LAUNCH
+    if (launchTriggerId !== undefined) {
+      lastHandledTriggerIdRef.current = launchTriggerId;
+    }
+    isSessionResetRef.current = false;
+
+    // 1. Source Context & Initial Villa initialization
+    sessionContextRef.current.sourceContext = sourceContext || { type: 'global' };
+
+    const launchVillaId =
+      sourceContext?.type === 'villa'
+        ? sourceContext.id
+        : initialVillaId;
+
+    if (launchVillaId) {
+      setTripState((prev) => {
+        const next = {
+          ...prev,
+          selectedVillaId: launchVillaId,
+        };
+        onTripStateChangeRef.current?.(next);
+        return next;
+      });
+      sessionContextRef.current.lastVillaContext = launchVillaId;
+      sessionContextRef.current.activeTripState.selectedVillaId = launchVillaId;
+    }
+
+    // 2. Initial prompt trigger for fresh launch
+    if (initialPrompt) {
+      lastHandledPromptRef.current = initialPrompt;
+      handleSendMessage(initialPrompt);
+    }
+  }, [isOpen, isResume, launchTriggerId, sourceContext, initialVillaId, initialPrompt]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -327,15 +316,6 @@ export function PrivateConciergeModal({
       if (composed.tripState) {
         setTripState(composed.tripState);
         onTripStateChange?.(composed.tripState);
-      } else if (composed.recommendedVillaId) {
-        setTripState((prev) => {
-          const next = {
-            ...prev,
-            selectedVillaId: composed.recommendedVillaId,
-          };
-          onTripStateChange?.(next);
-          return next;
-        });
       }
 
       if (composed.itineraryDays && composed.itineraryDays.length > 0) {
@@ -377,7 +357,7 @@ export function PrivateConciergeModal({
   const handleResetSession = () => {
     isSessionResetRef.current = true;
     lastHandledPromptRef.current = null;
-    lastHandledTriggerIdRef.current = null;
+    lastHandledTriggerIdRef.current = launchTriggerId ?? null;
     setMessages([]);
     setItineraryDays([]);
     setDiningHighlight(null);
@@ -420,25 +400,39 @@ export function PrivateConciergeModal({
         break;
 
       case 'open_360': {
+        const targetVilla = action.villaId || tripState.selectedVillaId;
+        if (action.villaId) {
+          sessionContextRef.current.lastVillaContext = action.villaId;
+        }
         const targetSceneId =
           action.sceneId ||
           (action.villaId ? veloraResort.villas.find((v) => v.id === action.villaId)?.panoramaSceneId : undefined) ||
+          (targetVilla ? veloraResort.villas.find((v) => v.id === targetVilla)?.panoramaSceneId : undefined) ||
           currentVilla?.panoramaSceneId ||
           'sunset-exterior';
-        onClose();
         onOpen360Scene(targetSceneId);
         break;
       }
 
-      case 'request_stay':
-        onClose();
+      case 'request_stay': {
+        const targetVilla = action.villaId || tripState.selectedVillaId;
+        if (targetVilla && targetVilla !== tripState.selectedVillaId) {
+          setTripState((prev) => {
+            const next = { ...prev, selectedVillaId: targetVilla };
+            onTripStateChangeRef.current?.(next);
+            return next;
+          });
+          sessionContextRef.current.lastVillaContext = targetVilla;
+          sessionContextRef.current.activeTripState.selectedVillaId = targetVilla;
+        }
         onReserveHandoff({
-          villaId: action.villaId || tripState.selectedVillaId,
+          villaId: targetVilla,
           nights: action.nights || tripState.nights || 5,
           guests: action.guests || tripState.guests || 2,
           notes: action.notes || tripState.notes,
         });
         break;
+      }
 
       case 'compare_villas':
         onClose();
@@ -464,7 +458,6 @@ export function PrivateConciergeModal({
   };
 
   const handleReserveNow = () => {
-    onClose();
     onReserveHandoff({
       villaId: tripState.selectedVillaId,
       nights: tripState.nights || 5,
@@ -721,7 +714,6 @@ export function PrivateConciergeModal({
                                   {recVilla.panoramaSceneId && (
                                     <button
                                       onClick={() => {
-                                        onClose();
                                         onOpen360Scene(recVilla.panoramaSceneId!);
                                       }}
                                       className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] font-sans text-white/70 hover:text-white transition-colors"
@@ -760,7 +752,6 @@ export function PrivateConciergeModal({
                             <div className="mt-4 pt-1">
                               <button
                                 onClick={() => {
-                                  onClose();
                                   onOpen360Scene(currentVilla.panoramaSceneId!);
                                 }}
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#dfcaa3]/50 bg-[#dfcaa3]/10 hover:bg-[#dfcaa3]/20 text-[#dfcaa3] text-xs font-sans uppercase tracking-[0.18em] transition-all"

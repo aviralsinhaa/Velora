@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { CustomCursor } from './components/ui/CustomCursor';
 import { Navbar } from './components/navigation/Navbar';
 import { MegaMenu } from './components/navigation/MegaMenu';
@@ -67,11 +67,171 @@ export default function App() {
     | { type: 'booking' }
     | null;
 
+  // App-level logical focus restoration target
+  type FocusReturnTarget =
+    | { view: 'villaDetail'; focusId: string; villaId: string }
+    | { view: 'compare'; focusId: string }
+    | { view: 'dining'; focusId: string }
+    | { view: 'experiences'; focusId: string }
+    | { view: 'wellness'; focusId: string }
+    | { view: 'gettingHere'; focusId: string }
+    | { view: 'practicalInfo'; focusId: string }
+    | null;
+
+  const [pendingFocusTarget, setPendingFocusTarget] = useState<FocusReturnTarget>(null);
+
   const [conciergeReturnOverlay, setConciergeReturnOverlay] = useState<OverlayType>(null);
   const [bookingReturnOverlay, setBookingReturnOverlay] = useState<OverlayType>(null);
   const [three60ReturnOverlay, setThree60ReturnOverlay] = useState<OverlayType>(null);
   const [villaDetailReturnCompare, setVillaDetailReturnCompare] = useState<boolean>(false);
   const [conciergeTriggerId, setConciergeTriggerId] = useState<number>(0);
+  const [isConciergeResumed, setIsConciergeResumed] = useState<boolean>(false);
+
+  // Helper to extract closest data-focus-id from currently active DOM element
+  const getActiveFocusId = (): string | null => {
+    const active = document.activeElement;
+    if (!active || !(active instanceof HTMLElement)) return null;
+    const closest = active.closest('[data-focus-id]');
+    return closest ? closest.getAttribute('data-focus-id') : null;
+  };
+
+  // Helper to record origin focus target before unmounting source view
+  const captureOriginFocusTarget = (
+    originOverlay: OverlayType,
+    explicitFocusId?: string
+  ): FocusReturnTarget => {
+    const detectedId = explicitFocusId || getActiveFocusId();
+
+    if (originOverlay?.type === 'villaDetail') {
+      return {
+        view: 'villaDetail',
+        villaId: originOverlay.villaId,
+        focusId: detectedId || 'villa-detail-request-primary',
+      };
+    }
+    if (detailVillaId) {
+      return {
+        view: 'villaDetail',
+        villaId: detailVillaId,
+        focusId: detectedId || 'villa-detail-request-primary',
+      };
+    }
+    if (originOverlay?.type === 'compareVillas' || isCompareVillasOpen) {
+      return {
+        view: 'compare',
+        focusId: detectedId || 'compare-concierge',
+      };
+    }
+    if (originOverlay?.type === 'dining' || isDiningOpen) {
+      return {
+        view: 'dining',
+        focusId: detectedId || 'dining-concierge',
+      };
+    }
+    if (originOverlay?.type === 'wellness' || isWellnessOpen) {
+      return {
+        view: 'wellness',
+        focusId: detectedId || 'wellness-concierge',
+      };
+    }
+    if (originOverlay?.type === 'experiences' || isExperiencesOpen) {
+      return {
+        view: 'experiences',
+        focusId: detectedId || 'experiences-concierge',
+      };
+    }
+    if (originOverlay?.type === 'gettingHere' || isGettingHereOpen) {
+      return {
+        view: 'gettingHere',
+        focusId: detectedId || 'getting-here-concierge',
+      };
+    }
+    if (originOverlay?.type === 'practicalInfo' || isPracticalInfoOpen) {
+      return {
+        view: 'practicalInfo',
+        focusId: detectedId || 'practical-info-concierge',
+      };
+    }
+    return null;
+  };
+
+  // Cross-overlay logical focus restoration effect
+  useEffect(() => {
+    if (!pendingFocusTarget) return;
+    if (isBookingOpen || isConciergeOpen || is360Open || isMegaMenuOpen) return;
+
+    const isTargetViewMounted =
+      (pendingFocusTarget.view === 'villaDetail' && detailVillaId === pendingFocusTarget.villaId) ||
+      (pendingFocusTarget.view === 'compare' && isCompareVillasOpen) ||
+      (pendingFocusTarget.view === 'dining' && isDiningOpen) ||
+      (pendingFocusTarget.view === 'wellness' && isWellnessOpen) ||
+      (pendingFocusTarget.view === 'experiences' && isExperiencesOpen) ||
+      (pendingFocusTarget.view === 'gettingHere' && isGettingHereOpen) ||
+      (pendingFocusTarget.view === 'practicalInfo' && isPracticalInfoOpen);
+
+    if (!isTargetViewMounted) return;
+
+    let attempts = 0;
+    let animId: number;
+
+    const tryFocus = () => {
+      attempts++;
+      const targetEl = document.querySelector(
+        `[data-focus-id="${pendingFocusTarget.focusId}"]`
+      ) as HTMLElement | null;
+
+      if (targetEl && typeof targetEl.focus === 'function') {
+        targetEl.focus();
+        setPendingFocusTarget(null);
+        return;
+      }
+
+      if (attempts >= 3) {
+        const fallbackSelector =
+          pendingFocusTarget.view === 'villaDetail'
+            ? '[data-focus-id="villa-detail-request-primary"], [data-focus-id="villa-detail-request-header"], [data-focus-id="villa-detail-concierge-header"], [data-focus-id="villa-detail-back"]'
+            : pendingFocusTarget.view === 'compare'
+            ? '[data-focus-id="compare-concierge"], [data-focus-id="compare-back"]'
+            : pendingFocusTarget.view === 'dining'
+            ? '[data-focus-id="dining-concierge"], [data-focus-id="dining-back"]'
+            : pendingFocusTarget.view === 'wellness'
+            ? '[data-focus-id="wellness-concierge"], [data-focus-id="wellness-back"]'
+            : pendingFocusTarget.view === 'experiences'
+            ? '[data-focus-id="experiences-concierge"], [data-focus-id="experiences-back"]'
+            : pendingFocusTarget.view === 'gettingHere'
+            ? '[data-focus-id="getting-here-concierge"], [data-focus-id="getting-here-back"]'
+            : '[data-focus-id="practical-info-concierge"], [data-focus-id="practical-info-back"]';
+
+        const fallbackEl = document.querySelector(fallbackSelector) as HTMLElement | null;
+        if (fallbackEl && typeof fallbackEl.focus === 'function') {
+          fallbackEl.focus();
+        }
+        setPendingFocusTarget(null);
+        return;
+      }
+
+      animId = requestAnimationFrame(tryFocus);
+    };
+
+    animId = requestAnimationFrame(tryFocus);
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
+  }, [
+    pendingFocusTarget,
+    isBookingOpen,
+    isConciergeOpen,
+    is360Open,
+    isMegaMenuOpen,
+    detailVillaId,
+    isCompareVillasOpen,
+    isDiningOpen,
+    isWellnessOpen,
+    isExperiencesOpen,
+    isGettingHereOpen,
+    isPracticalInfoOpen,
+  ]);
 
   // Helper to ensure clean overlay hierarchy (zero stacking collisions)
   const closeAllOverlays = () => {
@@ -89,7 +249,12 @@ export default function App() {
   };
 
   // Direct Booking Handler with Origin Preservation
-  const handleOpenBooking = (villaId?: string, notes?: string, explicitReturn?: OverlayType) => {
+  const handleOpenBooking = (
+    villaId?: string,
+    notes?: string,
+    explicitReturn?: OverlayType,
+    sourceFocusId?: string
+  ) => {
     let toReturn: OverlayType = explicitReturn ?? null;
     if (!toReturn) {
       if (isConciergeOpen) toReturn = { type: 'concierge' };
@@ -100,6 +265,11 @@ export default function App() {
       else if (isPracticalInfoOpen) toReturn = { type: 'practicalInfo' };
       else if (detailVillaId) toReturn = { type: 'villaDetail', villaId: detailVillaId };
       else if (isCompareVillasOpen) toReturn = { type: 'compareVillas' };
+    }
+
+    if (toReturn && toReturn.type !== 'concierge') {
+      const target = captureOriginFocusTarget(toReturn, sourceFocusId);
+      if (target) setPendingFocusTarget(target);
     }
 
     closeAllOverlays();
@@ -122,7 +292,10 @@ export default function App() {
       else if (ret.type === 'practicalInfo') setIsPracticalInfoOpen(true);
       else if (ret.type === 'villaDetail') setDetailVillaId(ret.villaId);
       else if (ret.type === 'compareVillas') setIsCompareVillasOpen(true);
-      else if (ret.type === 'concierge') setIsConciergeOpen(true);
+      else if (ret.type === 'concierge') {
+        setIsConciergeResumed(true);
+        setIsConciergeOpen(true);
+      }
     }
   };
 
@@ -132,6 +305,7 @@ export default function App() {
     villaId?: string;
     sourceContext?: ConciergeSourceContext;
     explicitReturn?: OverlayType;
+    sourceFocusId?: string;
   }
 
   const handleOpenConcierge = (
@@ -140,16 +314,19 @@ export default function App() {
     legacyExplicitReturn?: OverlayType,
     legacySourceContext?: ConciergeSourceContext
   ) => {
+    setIsConciergeResumed(false);
     setConciergeTriggerId((prev) => prev + 1);
     let prompt: string | undefined;
     let villaId: string | undefined = legacyVillaId;
     let explicitReturn: OverlayType = legacyExplicitReturn ?? null;
     let sourceContext: ConciergeSourceContext = legacySourceContext || { type: 'global' };
+    let explicitFocusId: string | undefined = undefined;
 
     if (typeof optionsOrPrompt === 'object' && optionsOrPrompt !== null) {
       prompt = optionsOrPrompt.prompt;
       villaId = optionsOrPrompt.villaId;
       explicitReturn = optionsOrPrompt.explicitReturn ?? null;
+      explicitFocusId = optionsOrPrompt.sourceFocusId;
       if (optionsOrPrompt.sourceContext) {
         sourceContext = optionsOrPrompt.sourceContext;
       } else if (optionsOrPrompt.villaId) {
@@ -175,6 +352,11 @@ export default function App() {
       else if (isCompareVillasOpen) toReturn = { type: 'compareVillas' };
     }
 
+    if (toReturn) {
+      const target = captureOriginFocusTarget(toReturn, explicitFocusId);
+      if (target) setPendingFocusTarget(target);
+    }
+
     closeAllOverlays();
     setConciergeReturnOverlay(toReturn);
     setConciergePrompt(prompt);
@@ -185,6 +367,7 @@ export default function App() {
 
   const handleCloseConcierge = () => {
     setIsConciergeOpen(false);
+    setIsConciergeResumed(false);
     setConciergePrompt(undefined);
     setConciergeVillaId(undefined);
     setConciergeSourceContext({ type: 'global' });
@@ -205,18 +388,35 @@ export default function App() {
 
   // Seamless Handoff from Concierge to Booking
   const handleConciergeBookingHandoff = (data: ConciergeHandoffData) => {
+    setIsConciergeResumed(true);
     handleOpenBooking(data.villaId, data.notes, { type: 'concierge' });
     setBookingNights(data.nights);
     setBookingGuests(data.guests);
   };
 
   // 360 Viewer Handler
-  const handleOpen360 = (sceneId?: string, explicitReturn?: OverlayType) => {
+  const handleOpen360 = (
+    sceneId?: string,
+    explicitReturn?: OverlayType,
+    sourceFocusId?: string
+  ) => {
     let toReturn: OverlayType = explicitReturn ?? null;
     if (!toReturn) {
-      if (detailVillaId) toReturn = { type: 'villaDetail', villaId: detailVillaId };
+      if (isConciergeOpen) toReturn = { type: 'concierge' };
+      else if (detailVillaId) toReturn = { type: 'villaDetail', villaId: detailVillaId };
       else if (isCompareVillasOpen) toReturn = { type: 'compareVillas' };
+      else if (isDiningOpen) toReturn = { type: 'dining' };
+      else if (isWellnessOpen) toReturn = { type: 'wellness' };
+      else if (isExperiencesOpen) toReturn = { type: 'experiences' };
+      else if (isGettingHereOpen) toReturn = { type: 'gettingHere' };
+      else if (isPracticalInfoOpen) toReturn = { type: 'practicalInfo' };
     }
+
+    if (toReturn && toReturn.type !== 'concierge') {
+      const target = captureOriginFocusTarget(toReturn, sourceFocusId);
+      if (target) setPendingFocusTarget(target);
+    }
+
     closeAllOverlays();
     setThree60ReturnOverlay(toReturn);
     setPanoramaSceneId(sceneId);
@@ -236,6 +436,10 @@ export default function App() {
       else if (ret.type === 'experiences') setIsExperiencesOpen(true);
       else if (ret.type === 'gettingHere') setIsGettingHereOpen(true);
       else if (ret.type === 'practicalInfo') setIsPracticalInfoOpen(true);
+      else if (ret.type === 'concierge') {
+        setIsConciergeResumed(true);
+        setIsConciergeOpen(true);
+      }
     }
   };
 
@@ -252,8 +456,14 @@ export default function App() {
     setIsMegaMenuOpen(true);
   };
 
-  const handleOpenVillaDetail = (villaId: string, fromCompare: boolean = false) => {
+  const handleOpenVillaDetail = (villaId: string, fromCompare: boolean = false, sourceFocusId?: string) => {
     const isFromCompare = fromCompare || isCompareVillasOpen;
+    if (isFromCompare) {
+      setPendingFocusTarget({
+        view: 'compare',
+        focusId: sourceFocusId || `compare-view-${villaId}`,
+      });
+    }
     closeAllOverlays();
     setVillaDetailReturnCompare(isFromCompare);
     setDetailVillaId(villaId);
@@ -446,14 +656,15 @@ export default function App() {
         initialVillaId={conciergeVillaId}
         sourceContext={conciergeSourceContext}
         launchTriggerId={conciergeTriggerId}
+        isResume={isConciergeResumed}
         onClose={handleCloseConcierge}
         onReserveHandoff={(data) => {
           handleConciergeBookingHandoff(data);
         }}
         onOpen360Scene={(sceneId) => {
-          setConciergeReturnOverlay(null);
+          setIsConciergeResumed(true);
           setIsConciergeOpen(false);
-          handleOpen360(sceneId);
+          handleOpen360(sceneId, { type: 'concierge' });
         }}
         onSelectVillaInExplorer={(villaId) => {
           setConciergeReturnOverlay(null);
@@ -513,25 +724,35 @@ export default function App() {
           villa={activeDetailVilla}
           allVillas={veloraResort.villas}
           onClose={handleCloseVillaDetail}
-          onRequestStay={(villaId) =>
-            handleOpenBooking(villaId, undefined, {
-              type: 'villaDetail',
-              villaId: activeDetailVilla.id,
-            })
+          onRequestStay={(villaId, sourceFocusId) =>
+            handleOpenBooking(
+              villaId,
+              undefined,
+              {
+                type: 'villaDetail',
+                villaId: activeDetailVilla.id,
+              },
+              sourceFocusId || 'villa-detail-request-primary'
+            )
           }
-          onOpen360={(sceneId) =>
-            handleOpen360(sceneId, {
-              type: 'villaDetail',
-              villaId: activeDetailVilla.id,
-            })
+          onOpen360={(sceneId, sourceFocusId) =>
+            handleOpen360(
+              sceneId,
+              {
+                type: 'villaDetail',
+                villaId: activeDetailVilla.id,
+              },
+              sourceFocusId || 'villa-detail-360'
+            )
           }
-          onAskConcierge={(prompt, villaId) => {
+          onAskConcierge={(prompt, villaId, sourceFocusId) => {
             const targetId = villaId || activeDetailVilla.id;
             handleOpenConcierge({
               prompt,
               villaId: targetId,
               sourceContext: { type: 'villa', id: targetId },
               explicitReturn: { type: 'villaDetail', villaId: activeDetailVilla.id },
+              sourceFocusId: sourceFocusId || 'villa-detail-concierge-header',
             });
           }}
           onCompareVillas={handleOpenCompareVillas}
@@ -544,15 +765,21 @@ export default function App() {
         <CompareVillasView
           villas={veloraResort.villas}
           onClose={() => setIsCompareVillasOpen(false)}
-          onSelectVilla={(villaId) => handleOpenVillaDetail(villaId, true)}
+          onSelectVilla={(villaId) => handleOpenVillaDetail(villaId, true, `compare-view-${villaId}`)}
           onRequestStay={(villaId) =>
-            handleOpenBooking(villaId, undefined, { type: 'compareVillas' })
+            handleOpenBooking(
+              villaId,
+              undefined,
+              { type: 'compareVillas' },
+              `compare-request-${villaId}`
+            )
           }
           onAskConcierge={(prompt) =>
             handleOpenConcierge({
               prompt,
               sourceContext: { type: 'global' },
               explicitReturn: { type: 'compareVillas' },
+              sourceFocusId: 'compare-concierge',
             })
           }
         />
@@ -567,10 +794,14 @@ export default function App() {
               prompt,
               sourceContext: context || { type: 'dining', id: 'dining-general' },
               explicitReturn: { type: 'dining' },
+              sourceFocusId:
+                context && 'id' in context && context.id !== 'dining-general'
+                  ? `dining-venue-concierge-${context.id}`
+                  : 'dining-concierge',
             })
           }
           onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'dining' })
+            handleOpenBooking(undefined, notes, { type: 'dining' }, 'dining-request')
           }
         />
       )}
@@ -584,10 +815,14 @@ export default function App() {
               prompt,
               sourceContext: context || { type: 'wellness', id: 'water-pavilion' },
               explicitReturn: { type: 'wellness' },
+              sourceFocusId:
+                context && 'id' in context && context.id !== 'water-pavilion'
+                  ? `wellness-ritual-concierge-${context.id}`
+                  : 'wellness-concierge',
             })
           }
           onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'wellness' })
+            handleOpenBooking(undefined, notes, { type: 'wellness' }, 'wellness-request')
           }
         />
       )}
@@ -601,10 +836,14 @@ export default function App() {
               prompt,
               sourceContext: context || { type: 'experience', id: 'experience-general' },
               explicitReturn: { type: 'experiences' },
+              sourceFocusId:
+                context && 'id' in context && context.id !== 'experience-general'
+                  ? `experiences-concierge-${context.id}`
+                  : 'experiences-concierge',
             })
           }
           onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'experiences' })
+            handleOpenBooking(undefined, notes, { type: 'experiences' }, 'experiences-request')
           }
         />
       )}
@@ -618,10 +857,11 @@ export default function App() {
               prompt,
               sourceContext: { type: 'gettingHere' },
               explicitReturn: { type: 'gettingHere' },
+              sourceFocusId: 'getting-here-concierge',
             })
           }
           onRequestStay={() =>
-            handleOpenBooking(undefined, undefined, { type: 'gettingHere' })
+            handleOpenBooking(undefined, undefined, { type: 'gettingHere' }, 'getting-here-request')
           }
         />
       )}
@@ -635,10 +875,11 @@ export default function App() {
               prompt,
               sourceContext: { type: 'practicalInfo' },
               explicitReturn: { type: 'practicalInfo' },
+              sourceFocusId: 'practical-info-concierge',
             })
           }
           onRequestStay={() =>
-            handleOpenBooking(undefined, undefined, { type: 'practicalInfo' })
+            handleOpenBooking(undefined, undefined, { type: 'practicalInfo' }, 'practical-info-request')
           }
         />
       )}

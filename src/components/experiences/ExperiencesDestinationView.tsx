@@ -35,7 +35,7 @@ export function ExperiencesDestinationView({
   const experiencePresentation: Record<string, { suits: string; includes: string }> = {
     'house-reef-dive': {
       suits: 'Certified divers with relevant certification for outer drop-off dives. Lagoon orientation available on the house reef.',
-      includes: 'Full Scubapro equipment, guided boat transfer, marine guide briefing, refreshments.',
+      includes: 'Scuba equipment, reef safety orientation, and boat-based access within the experience concept.',
     },
     'sunset-dhoni-cruise': {
       suits: 'Couples, families, and photography enthusiasts.',
@@ -43,7 +43,7 @@ export function ExperiencesDestinationView({
     },
     'sandbank-picnic': {
       suits: 'Couples seeking complete Robinson Crusoe luxury or private celebratory lunches.',
-      includes: 'Private boat transfer, curated picnic setup, shaded linen canopy, chilled beverages.',
+      includes: 'Boat-based transit within the experience concept, curated picnic setup, shaded linen canopy, chilled beverages.',
     },
     'private-yacht-charter': {
       suits: 'Small groups or couples wanting total open-ocean freedom across Noonu Atoll.',
@@ -217,6 +217,7 @@ export function ExperiencesDestinationView({
                         id: exp.id,
                       })
                     }
+                    data-focus-id={`experiences-concierge-${exp.id}`}
                     className="editorial-link text-xs uppercase tracking-[0.2em]"
                   >
                     <span>Include in Itinerary with Concierge ✦</span>

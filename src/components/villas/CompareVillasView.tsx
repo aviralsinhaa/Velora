@@ -136,6 +136,7 @@ export function CompareVillasView({
                     </button>
                     <button
                       onClick={() => onSelectVilla(v.id)}
+                      data-focus-id={`compare-view-${v.id}`}
                       className="w-full py-2 text-center text-xs uppercase tracking-[0.2em] text-white/70 hover:text-white transition-colors block border border-white/10 rounded-full"
                     >
                       View Details →
