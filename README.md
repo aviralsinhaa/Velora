@@ -1,11 +1,11 @@
-<div align="center">
+# VELORA Private Island
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+An ultra-luxury private-island resort web atelier in Noonu Atoll, Maldives.
 
-  <h1>Built with AI Studio</h2>
+## Overview
+Velora features cinematic editorial navigation, architectural sanctuaries, 360° spatial panoramas, and a private digital concierge.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
-
-  <a href="https://aistudio.google.com/apps">Start building</a>
-
-</div>
+## Architecture
+- **Framework**: React 19 SPA with Vite and Tailwind CSS.
+- **Concierge**: Velora's Concierge is a local purpose-built conversational experience operating entirely in-browser. No external LLM API or GEMINI_API_KEY is required.
+- **Server**: Express dev & production static serving.

@@ -1,0 +1,247 @@
+/**
+ * Luxury domain synonym definitions for Velora Private Island
+ */
+
+export const SYNONYM_GROUPS = {
+  PRIVACY: [
+    'private',
+    'privacy',
+    'quiet',
+    'secluded',
+    'seclusion',
+    'peaceful',
+    'alone',
+    'isolated',
+    'away from people',
+    'nobody',
+    'intimate',
+    'hidden',
+    'solitary',
+  ],
+
+  ROMANCE: [
+    'romantic',
+    'romance',
+    'girlfriend',
+    'boyfriend',
+    'partner',
+    'wife',
+    'husband',
+    'couple',
+    'two of us',
+    'honeymoon',
+    'anniversary',
+    'proposal',
+    'gf',
+    'bf',
+  ],
+
+  SUNSET: [
+    'sunset',
+    'evening view',
+    'golden hour',
+    'west',
+    'dusk',
+    'sundown',
+    'evening sun',
+    'twilight',
+  ],
+
+  SUNRISE: [
+    'sunrise',
+    'morning light',
+    'dawn',
+    'east',
+    'early morning',
+    'first light',
+  ],
+
+  DIVING: [
+    'diving',
+    'dive',
+    'scuba',
+    'underwater',
+    'reef dive',
+    'drift dive',
+    'manta',
+    'mantas',
+    'turtle',
+    'turtles',
+    'shark',
+    'sharks',
+    'coral',
+    'marine',
+    'scuba diving',
+  ],
+
+  SNORKELING: [
+    'snorkel',
+    'snorkeling',
+    'mask',
+    'fins',
+    'house reef',
+    'lagoon swim',
+    'coral garden',
+  ],
+
+  WELLNESS: [
+    'spa',
+    'wellness',
+    'massage',
+    'relax',
+    'relaxation',
+    'treatment',
+    'sound bath',
+    'sound healing',
+    'water pavilion',
+    'ayurvedic',
+    'ayurveda',
+    'vitality pool',
+    'tibetan',
+    'yoga',
+    'meditation',
+    'breathe',
+    'unwind',
+  ],
+
+  DINING: [
+    'dining',
+    'dinner',
+    'lunch',
+    'breakfast',
+    'food',
+    'restaurant',
+    'eat',
+    'chef',
+    'omakase',
+    'seafood',
+    'sandbank dinner',
+    'sand pavilion',
+    'aura',
+    'fire & smoke',
+    'fire and smoke',
+    'smoke',
+    'josper',
+    'subsolar',
+    'underwater',
+    'cellar',
+    'wine',
+    'champagne',
+  ],
+
+  AI_IDENTITY: [
+    'ai',
+    'bot',
+    'robot',
+    'human',
+    'real person',
+    'assistant',
+    'virtual',
+    'artificial',
+    'who made you',
+    'who are you',
+  ],
+
+  OVERWATER: [
+    'overwater',
+    'water villa',
+    'on the water',
+    'stilt',
+    'lagoon',
+    'above ocean',
+  ],
+
+  BEACH: [
+    'beach',
+    'beachfront',
+    'sand',
+    'shore',
+    'palm',
+    'garden',
+    'land',
+    'trees',
+  ],
+
+  POOL: [
+    'pool',
+    'infinity pool',
+    'plunge pool',
+    'swimming',
+    'swim',
+    'private pool',
+  ],
+
+  SAILING: [
+    'sail',
+    'sailing',
+    'catamaran',
+    'boat',
+    'yacht',
+    'dolphin',
+    'cruise',
+    'tender',
+  ],
+
+  ARRIVAL: [
+    'arrival',
+    'getting here',
+    'seaplane',
+    'flight',
+    'male',
+    'transfer',
+    'reach',
+    'how do we get there',
+    'airport',
+  ],
+
+  PRICE: [
+    'price',
+    'cost',
+    'rate',
+    'rates',
+    'how much',
+    'expensive',
+    'cheap',
+    'cheaper',
+    'cheapest',
+    'per night',
+    'total',
+    'dollar',
+    'budget',
+    'afford',
+  ],
+
+  AVAILABILITY: [
+    'available',
+    'availability',
+    'open dates',
+    'vacancy',
+    'vacancies',
+    'book',
+    'booking',
+    'reserve',
+    'reservation',
+  ],
+
+  FRUSTRATION: [
+    'fuck',
+    'shit',
+    'damn',
+    'stupid',
+    'confused',
+    'confusing',
+    'broken',
+    'hate',
+    'what the hell',
+    'useless',
+  ],
+};
+
+export function hasAnySynonym(text: string, groupKey: keyof typeof SYNONYM_GROUPS): boolean {
+  const synonyms = SYNONYM_GROUPS[groupKey];
+  if (!synonyms) return false;
+  return synonyms.some((syn) => {
+    const regex = new RegExp(`\\b${syn}\\b`, 'i');
+    return regex.test(text);
+  });
+}
