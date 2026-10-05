@@ -20,6 +20,7 @@ import {
   Calendar,
   Users,
 } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 export interface ConciergeHandoffData {
   villaId?: string;
@@ -106,6 +107,8 @@ export function PrivateConciergeModal({
 
   const conversationScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalContainerRef, isOpen);
   const sessionContextRef = useRef<ConciergeSessionContext>({
     turnCount: 0,
     lastVillaContext: initialVillaId || (sourceContext?.type === 'villa' ? sourceContext.id : undefined),
@@ -476,6 +479,7 @@ export function PrivateConciergeModal({
 
   return (
     <div
+      ref={modalContainerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Velora Private Concierge"
@@ -550,6 +554,7 @@ export function PrivateConciergeModal({
                 onClick={handleResetSession}
                 className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] font-sans text-white/60 hover:text-[#dfcaa3] transition-colors"
                 title="Start a fresh conversation"
+                aria-label="Start a fresh conversation (New Escape)"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span className="hidden sm:inline">NEW ESCAPE</span>
@@ -568,8 +573,10 @@ export function PrivateConciergeModal({
 
         {/* Mobile View Switcher (Only visible when structured itinerary exists on mobile) */}
         {hasItinerary && (
-          <div className="lg:hidden flex border-b border-white/10 bg-[#06101c]/90 text-xs shrink-0 z-20">
+          <div role="tablist" aria-label="Concierge views" className="lg:hidden flex border-b border-white/10 bg-[#06101c]/90 text-xs shrink-0 z-20">
             <button
+              role="tab"
+              aria-selected={mobileTab === 'chat'}
               onClick={() => setMobileTab('chat')}
               className={`flex-1 py-3 text-center uppercase tracking-[0.2em] font-sans font-medium transition-colors ${
                 mobileTab === 'chat'
@@ -580,6 +587,8 @@ export function PrivateConciergeModal({
               CONVERSATION
             </button>
             <button
+              role="tab"
+              aria-selected={mobileTab === 'plan'}
               onClick={() => setMobileTab('plan')}
               className={`flex-1 py-3 text-center uppercase tracking-[0.2em] font-sans font-medium transition-colors ${
                 mobileTab === 'plan'
@@ -632,6 +641,7 @@ export function PrivateConciergeModal({
                         <button
                           key={idx}
                           onClick={() => handleSendMessage(q)}
+                          aria-label={`Ask: ${q}`}
                           className="w-full py-3.5 flex items-center justify-between group text-left transition-colors"
                         >
                           <span className="text-xs sm:text-sm font-sans text-white/80 group-hover:text-[#dfcaa3] transition-all transform group-hover:translate-x-1 duration-200">
@@ -814,10 +824,12 @@ export function PrivateConciergeModal({
               >
                 <input
                   ref={inputRef}
+                  id="concierge-chat-input"
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Ask about villas, dining, the reef, or your stay…"
+                  aria-label="Ask about villas, dining, the reef, or your stay"
                   className="w-full bg-[#04080f] border border-white/15 focus:border-[#dfcaa3] text-white text-xs sm:text-sm rounded-full pl-5 pr-12 py-3.5 focus:outline-none transition-colors placeholder:text-white/35 font-light"
                 />
                 <button

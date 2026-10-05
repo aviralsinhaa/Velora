@@ -34,9 +34,18 @@ export function IslandLifeChapter({
         <div className="editorial-grid-12 gap-8 lg:gap-12 items-center mb-12 lg:mb-16">
           {/* 7 Cols: Dining Gateway */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={onOpenDining}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenDining();
+              }
+            }}
+            aria-label="Explore Dining Above the Reef"
             data-cursor="DINING"
-            className="lg:col-span-7 group cursor-pointer space-y-4 text-left"
+            className="lg:col-span-7 group cursor-pointer space-y-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] shadow-2xl">
               <img
@@ -69,9 +78,18 @@ export function IslandLifeChapter({
 
           {/* 5 Cols: Ocean / Experiences Gateway */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={onOpenExperiences}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onOpenExperiences();
+              }
+            }}
+            aria-label="Explore House Reef & Expeditions"
             data-cursor="OCEAN"
-            className="lg:col-span-5 group cursor-pointer space-y-4 text-left"
+            className="lg:col-span-5 group cursor-pointer space-y-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[4/5] sm:aspect-[4/5] shadow-2xl">
               <img
@@ -89,7 +107,7 @@ export function IslandLifeChapter({
                   House Reef & Expeditions
                 </h3>
                 <p className="font-sans text-xs text-white/70 mt-1 font-light hidden sm:block">
-                  Guided reef drift dives, sunset catamaran sails, and deserted atoll picnics.
+                  Outer-reef drift exploration, sunset catamaran sails, and deserted atoll picnics.
                 </p>
               </div>
             </div>
@@ -105,9 +123,18 @@ export function IslandLifeChapter({
 
         {/* Spread 2: Full-Width / 12-Column Quieter Wellness Gateway */}
         <div
+          role="button"
+          tabIndex={0}
           onClick={onOpenWellness}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onOpenWellness();
+            }
+          }}
+          aria-label="Discover Wellness & Rituals at The Water Pavilion"
           data-cursor="WELLNESS"
-          className="group cursor-pointer space-y-4 text-left border-t border-white/10 pt-10"
+          className="group cursor-pointer space-y-4 text-left border-t border-white/10 pt-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3] rounded-2xl"
         >
           <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/9] sm:aspect-[21/9] shadow-2xl">
             <img

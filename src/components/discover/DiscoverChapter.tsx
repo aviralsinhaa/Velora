@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { X, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface GalleryPiece {
   id: string;
@@ -13,6 +14,10 @@ interface GalleryPiece {
 
 export function DiscoverChapter() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const lastActiveElementRef = useRef<HTMLElement | null>(null);
+
+  useFocusTrap(lightboxRef, lightboxIndex !== null, { autoFocusFirst: true });
 
   // Curated, art-directed editorial pieces — large photography from one cohesive Maldivian resort world
   const pieces: GalleryPiece[] = [
@@ -70,9 +75,11 @@ export function DiscoverChapter() {
     },
   ];
 
-  // Keyboard navigation for lightbox
+  // Keyboard navigation and focus restoration for lightbox
   useEffect(() => {
     if (lightboxIndex === null) return;
+    lastActiveElementRef.current = document.activeElement as HTMLElement | null;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setLightboxIndex(null);
       if (e.key === 'ArrowRight') {
@@ -83,7 +90,12 @@ export function DiscoverChapter() {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (lastActiveElementRef.current && typeof lastActiveElementRef.current.focus === 'function') {
+        lastActiveElementRef.current.focus();
+      }
+    };
   }, [lightboxIndex, pieces.length]);
 
   return (
@@ -110,10 +122,12 @@ export function DiscoverChapter() {
            ======================================================== */}
         <div className="block md:hidden space-y-10 mb-12">
           {pieces.map((p, idx) => (
-            <div
+            <button
               key={p.id}
+              type="button"
               onClick={() => setLightboxIndex(idx)}
-              className="space-y-2 cursor-pointer group"
+              aria-label={`Open ${p.title} photograph`}
+              className="w-full text-left space-y-2 cursor-pointer group focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xl"
             >
               <div className={`relative rounded-xl overflow-hidden border border-white/10 bg-[#06101c] ${p.aspect} w-full shadow-lg`}>
                 <img
@@ -128,7 +142,7 @@ export function DiscoverChapter() {
                 <span className="font-editorial text-lg text-white font-normal">{p.title}</span>
                 <span className="text-[9px] uppercase tracking-widest text-[#dfcaa3] font-sans font-medium">{p.caption}</span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -138,10 +152,12 @@ export function DiscoverChapter() {
            ======================================================== */}
         <div className="hidden md:grid md:grid-cols-12 gap-8 lg:gap-12 mb-16 items-center">
           {/* Row 1: 12-Column Hero */}
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(0)}
             data-cursor="VIEW"
-            className="col-span-12 group cursor-pointer space-y-2"
+            aria-label={`Open ${pieces[0].title} photograph`}
+            className="col-span-12 group cursor-pointer space-y-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[21/9] w-full shadow-2xl">
               <img
@@ -161,13 +177,15 @@ export function DiscoverChapter() {
               <span className="font-editorial text-lg text-white/90">{pieces[0].title}</span>
               <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[0].caption}</span>
             </div>
-          </div>
+          </button>
 
           {/* Row 2: 7-col Landscape + 5-col Portrait */}
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(1)}
             data-cursor="VIEW"
-            className="col-span-7 group cursor-pointer space-y-2"
+            aria-label={`Open ${pieces[1].title} photograph`}
+            className="col-span-7 group cursor-pointer space-y-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] w-full shadow-xl">
               <img
@@ -181,12 +199,14 @@ export function DiscoverChapter() {
               <span className="font-editorial text-base text-white/90">{pieces[1].title}</span>
               <span className="text-[9px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[1].caption}</span>
             </div>
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(2)}
             data-cursor="VIEW"
-            className="col-span-5 group cursor-pointer space-y-2"
+            aria-label={`Open ${pieces[2].title} photograph`}
+            className="col-span-5 group cursor-pointer space-y-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[4/5] w-full shadow-xl">
               <img
@@ -200,13 +220,15 @@ export function DiscoverChapter() {
               <span className="font-editorial text-base text-white/90">{pieces[2].title}</span>
               <span className="text-[9px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[2].caption}</span>
             </div>
-          </div>
+          </button>
 
           {/* Row 3: 5-col Portrait + 7-col Landscape */}
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(3)}
             data-cursor="VIEW"
-            className="col-span-5 group cursor-pointer space-y-2"
+            aria-label={`Open ${pieces[3].title} photograph`}
+            className="col-span-5 group cursor-pointer space-y-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[4/5] w-full shadow-xl">
               <img
@@ -220,12 +242,14 @@ export function DiscoverChapter() {
               <span className="font-editorial text-base text-white/90">{pieces[3].title}</span>
               <span className="text-[9px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[3].caption}</span>
             </div>
-          </div>
+          </button>
 
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(4)}
             data-cursor="VIEW"
-            className="col-span-7 group cursor-pointer space-y-2"
+            aria-label={`Open ${pieces[4].title} photograph`}
+            className="col-span-7 group cursor-pointer space-y-2 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] w-full shadow-xl">
               <img
@@ -239,13 +263,15 @@ export function DiscoverChapter() {
               <span className="font-editorial text-base text-white/90">{pieces[4].title}</span>
               <span className="text-[9px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[4].caption}</span>
             </div>
-          </div>
+          </button>
 
           {/* Row 4: 12-Column Full Cinematic Image */}
-          <div
+          <button
+            type="button"
             onClick={() => setLightboxIndex(5)}
             data-cursor="VIEW"
-            className="col-span-12 group cursor-pointer space-y-2 pt-4"
+            aria-label={`Open ${pieces[5].title} photograph`}
+            className="col-span-12 group cursor-pointer space-y-2 pt-4 text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-2xl"
           >
             <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[21/9] w-full shadow-2xl">
               <img
@@ -259,13 +285,19 @@ export function DiscoverChapter() {
               <span className="font-editorial text-lg text-white/90">{pieces[5].title}</span>
               <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">{pieces[5].caption}</span>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
       {/* FULLSCREEN LIGHTBOX */}
       {lightboxIndex !== null && pieces[lightboxIndex] && (
-        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+        <div
+          ref={lightboxRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Photography Lightbox"
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6 animate-fade-in"
+        >
           <button
             onClick={() => setLightboxIndex(null)}
             className="absolute top-5 right-5 p-3 text-white/70 hover:text-white"

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Villa } from '../../types';
 import { ArrowLeft, Compass, Check, Sparkles, X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface VillaDetailViewProps {
   villa: Villa;
@@ -23,6 +24,9 @@ export function VillaDetailView({
   onSelectOtherVilla,
   allVillas,
 }: VillaDetailViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   // Lock body scroll while deep view is open and handle Escape key
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -68,6 +72,7 @@ export function VillaDetailView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label={`${villa.name} Details`}
@@ -349,8 +354,17 @@ export function VillaDetailView({
               .map((other) => (
                 <div
                   key={other.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectOtherVilla(other.id)}
-                  className="p-5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 cursor-pointer transition-all space-y-3 group"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectOtherVilla(other.id);
+                    }
+                  }}
+                  aria-label={`View details for ${other.name}`}
+                  className="p-5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 cursor-pointer transition-all space-y-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3]"
                 >
                   <div className="aspect-[16/10] rounded-lg overflow-hidden border border-white/10 bg-[#06101c]">
                     <img

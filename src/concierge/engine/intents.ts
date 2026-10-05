@@ -7,37 +7,13 @@ import { hasAnySynonym } from './synonyms';
 import { DialogueContext } from './dialogueState';
 import { isRepairTrigger } from './repairEngine';
 import { extractEntities } from './entities';
+import { classifyBookingUtterance, type BookingUtteranceKind } from './bookingClassifier';
+
+export { classifyBookingUtterance };
+export type { BookingUtteranceKind };
 
 export function isExplicitVillaSelection(text: string): boolean {
-  const lower = text.toLowerCase().trim();
-  // Queries asking for comparisons, opinions, recommendations, details, or prices are NOT selections
-  if (
-    lower.startsWith('which villa') ||
-    lower.startsWith('what villa') ||
-    lower.includes('best villa') ||
-    lower.includes('recommend') ||
-    lower.includes('tell me about') ||
-    lower.includes('how much') ||
-    lower.includes('price') ||
-    lower.includes('rate') ||
-    lower.includes('compare') ||
-    lower.includes('does it have') ||
-    lower.includes('is it') ||
-    lower.includes('do they') ||
-    lower.includes('details')
-  ) {
-    return false;
-  }
-
-  return (
-    /\b(?:select|choose|pick|book|reserve)\b/i.test(lower) ||
-    /\b(?:i want|we want|i would like|we would like|i'd like|we'd like)\b/i.test(lower) ||
-    /\b(?:let's go with|lets go with|go with|let's do|lets do)\b/i.test(lower) ||
-    /\b(?:i'll take|ill take|we'll take|well take|take the)\b/i.test(lower) ||
-    /\b(?:switch to|change to|change villa to|update villa to|make it the)\b/i.test(lower) ||
-    /\b(?:prefer|preference is)\b/i.test(lower) ||
-    /\b(?:stay in|stay at)\s+(?:the\s+)?(?:sunset|ocean|beach|estate|lagoon|residence|villa)\b/i.test(lower)
-  );
+  return classifyBookingUtterance(text) === 'commitment';
 }
 
 export type ConciergeIntent =
@@ -576,13 +552,32 @@ export function detectIntent(
     };
   }
 
-  // 5d-2. Explicit Villa Selection
-  if (isExplicitVillaSelection(lower) && extractEntities(rawInput).villaId) {
+  // Centralized booking classification
+  const bookingKind = classifyBookingUtterance(rawInput || text);
+
+  // 5d-2. Explicit Villa Selection (Commitment with villa entity)
+  if (bookingKind === 'commitment' && extractEntities(rawInput).villaId) {
     return {
       intent: 'VILLA_DETAIL',
       confidence: 0.99,
       quality: 'EXACT_PHRASE',
       subType: 'EXPLICIT_SELECTION',
+    };
+  }
+
+  // 5d-3. Booking Process / Availability / Exploratory Queries / Negation / Cancellation
+  // Must resolve BEFORE generic Villa Detail matching (e.g. "What is the process to reserve Ocean Lagoon Villa?")
+  if (
+    bookingKind === 'process_question' ||
+    bookingKind === 'availability_question' ||
+    bookingKind === 'exploratory' ||
+    bookingKind === 'cancel_or_decline'
+  ) {
+    return {
+      intent: 'AVAILABILITY',
+      confidence: 0.96,
+      quality: 'STRONG_PHRASE',
+      subType: bookingKind,
     };
   }
 
@@ -761,6 +756,10 @@ export function detectIntent(
     dialogueContext?.sourceContext?.type === 'dining' ||
     dialogueContext?.previousAssistantMeta?.topic === 'dining' ||
     dialogueContext?.currentTopic === 'dining';
+  const diningSubjectId =
+    dialogueContext?.previousAssistantMeta?.topic === 'dining'
+      ? dialogueContext.previousAssistantMeta.subjectId
+      : (dialogueContext?.sourceContext as any)?.id;
   if (
     lower.includes('dining') ||
     lower.includes('restaurant') ||
@@ -784,26 +783,48 @@ export function detectIntent(
     lower.includes('sand pavilion') ||
     lower.includes('sandbank dinner') ||
     lower.includes('omakase') ||
-    (isDiningContext && (lower.includes('this') || lower.includes('good') || lower.includes('menu') || lower.includes('tonight') || lower.includes('serve') || lower.includes('what is on') || lower.includes("what's on")))
+    (isDiningContext && (
+      lower.includes('this') ||
+      lower.includes('good') ||
+      lower.includes('menu') ||
+      lower.includes('tonight') ||
+      lower.includes('serve') ||
+      lower.includes('what is on') ||
+      lower.includes("what's on") ||
+      lower.includes('it')
+    ))
   ) {
     let subType: string | undefined = undefined;
     if (lower.includes('subsolar') || lower.includes('underwater') || lower.includes('cellar')) {
       subType = 'SUBSOLAR';
-    } else if (lower.includes('fire') || lower.includes('smoke') || lower.includes('josper') || lower.includes('grill') || lower.includes('ember')) {
+    } else if (
+      lower.includes('fire') ||
+      lower.includes('smoke') ||
+      lower.includes('josper') ||
+      lower.includes('grill') ||
+      lower.includes('ember') ||
+      (isDiningContext && (diningSubjectId === 'ember-grill' || diningSubjectId?.includes('ember')))
+    ) {
       subType = 'FIRE_SMOKE';
     } else if (
       lower.includes('aura') ||
       lower.includes('breakfast') ||
-      (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('aura')) ||
-      (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('aura'))
+      (isDiningContext && (diningSubjectId === 'aura-ocean' || diningSubjectId?.includes('aura')))
     ) {
       subType = 'AURA';
-    } else if (lower.includes('tide') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('tide')) || (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('tide'))) {
+    } else if (
+      lower.includes('tide') ||
+      (isDiningContext && (diningSubjectId === 'tide-pavilion' || diningSubjectId?.includes('tide')))
+    ) {
       subType = 'TIDE';
-    } else if (lower.includes('sand pavilion') || lower.includes('sandbank') || (isDiningContext && (dialogueContext?.sourceContext as any)?.id?.includes('sandbank')) || (isDiningContext && dialogueContext?.previousAssistantMeta?.subjectId?.includes('sandbank'))) {
+    } else if (
+      lower.includes('sand pavilion') ||
+      lower.includes('sandbank') ||
+      (isDiningContext && (diningSubjectId === 'sandbank-dining' || diningSubjectId?.includes('sandbank')))
+    ) {
       subType = 'SAND_PAVILION';
     } else if (isDiningContext) {
-      subType = ((dialogueContext?.sourceContext as any)?.id || dialogueContext?.previousAssistantMeta?.subjectId || 'AURA').toUpperCase();
+      subType = (diningSubjectId || 'AURA').toUpperCase();
     }
     return {
       intent: 'DINING',
@@ -849,8 +870,16 @@ export function detectIntent(
   }
 
   // 5l. Wellness
-  const isWellnessContext = dialogueContext?.sourceContext?.type === 'wellness';
-  const wellnessSourceId = dialogueContext?.sourceContext?.type === 'wellness' ? dialogueContext.sourceContext.id : undefined;
+  const isWellnessContext =
+    dialogueContext?.sourceContext?.type === 'wellness' ||
+    dialogueContext?.currentTopic === 'wellness' ||
+    dialogueContext?.previousAssistantMeta?.topic === 'wellness';
+  const wellnessSourceId =
+    dialogueContext?.previousAssistantMeta?.topic === 'wellness'
+      ? dialogueContext.previousAssistantMeta.subjectId
+      : (dialogueContext?.sourceContext?.type === 'wellness'
+      ? dialogueContext.sourceContext.id
+      : undefined);
   if (
     lower.includes('wellness') ||
     lower.includes('spa') ||
@@ -879,7 +908,13 @@ export function detectIntent(
       lower.includes('about') ||
       lower.includes('when') ||
       lower.includes('what') ||
-      lower.includes('how')
+      lower.includes('how') ||
+      lower.includes('how long') ||
+      lower.includes('duration') ||
+      lower.includes('length') ||
+      lower.includes('do it') ||
+      lower.includes('do this') ||
+      lower.includes('it')
     ))
   ) {
     let subType: string | undefined = undefined;
@@ -896,7 +931,7 @@ export function detectIntent(
     } else if (lower.includes('water pavilion') || (isWellnessContext && lower.includes('afternoon'))) {
       subType = 'WATER_PAVILION_AFTERNOON';
     } else if (lower.includes('water pavilion') || isWellnessContext) {
-      subType = 'WATER_PAVILION';
+      subType = wellnessSourceId || 'WATER_PAVILION';
     }
     return {
       intent: 'WELLNESS',
@@ -937,25 +972,21 @@ export function detectIntent(
 
   // 5n. Availability / Request Stay
   if (
+    bookingKind !== 'none' ||
     lower.includes('availability') ||
     lower.includes('available') ||
-    lower.includes('reserve') ||
-    lower.includes('reservation') ||
-    lower.includes('book') ||
-    lower.includes('booking') ||
     lower.includes('dates') ||
     lower.includes('request stay') ||
     lower.includes('stay request') ||
     lower.includes('request a stay') ||
     lower.includes('inquire stay') ||
-    lower.includes('inquire about staying') ||
-    lower.includes('how can i reserve') ||
-    lower.includes('how to book')
+    lower.includes('inquire about staying')
   ) {
     return {
       intent: 'AVAILABILITY',
       confidence: 0.95,
       quality: 'SINGLE_STRONG',
+      subType: bookingKind !== 'none' ? bookingKind : undefined,
     };
   }
 

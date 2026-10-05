@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { veloraResort } from '../../data/resortConfig';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ConciergeSourceContext } from '../../data/resortContext';
 import { ArrowLeft, Clock, Sparkles, X, Heart } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface WellnessDestinationViewProps {
   onClose: () => void;
@@ -15,6 +16,9 @@ export function WellnessDestinationView({
   onAskConcierge,
   onRequestStay,
 }: WellnessDestinationViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -40,6 +44,7 @@ export function WellnessDestinationView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Wellness at Velora"

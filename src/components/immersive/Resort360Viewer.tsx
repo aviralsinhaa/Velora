@@ -3,6 +3,7 @@ import { veloraResort } from '../../data/resortConfig';
 import { PanoramaScene } from '../../types';
 import * as THREE from 'three';
 import { X, ZoomIn, ZoomOut, Compass, ChevronRight } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Resort360ViewerProps {
   initialSceneId?: string;
@@ -10,12 +11,18 @@ interface Resort360ViewerProps {
 }
 
 export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, true, { autoFocusFirst: true });
+
   const [activeScene, setActiveScene] = useState<PanoramaScene>(() => {
     const found = veloraResort.panoramaScenes.find((s) => s.id === initialSceneId);
     return found || veloraResort.panoramaScenes[0];
   });
   const [isLoadingTexture, setIsLoadingTexture] = useState(true);
+
+  const viewerAliveRef = useRef(true);
+  const textureLoadGenerationRef = useRef(0);
 
   // Three.js single-instance refs
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -39,13 +46,22 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
 
   // Texture swapper: swaps texture without tearing down the WebGL renderer
   const loadTextureIntoMesh = useCallback((imageUrl: string) => {
-    if (!sphereMeshRef.current) return;
-    setIsLoadingTexture(true);
+    if (!viewerAliveRef.current || !sphereMeshRef.current) return;
+    const generation = ++textureLoadGenerationRef.current;
+    if (viewerAliveRef.current) {
+      setIsLoadingTexture(true);
+    }
 
     const textureLoader = new THREE.TextureLoader();
     textureLoader.load(
       imageUrl,
       (newTexture) => {
+        // Guard against stale asynchronous completion or unmounted viewer
+        if (!viewerAliveRef.current || generation !== textureLoadGenerationRef.current) {
+          newTexture.dispose();
+          return;
+        }
+
         newTexture.colorSpace = THREE.SRGBColorSpace;
         newTexture.minFilter = THREE.LinearFilter;
         newTexture.generateMipmaps = false;
@@ -61,12 +77,19 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
           mat.map = newTexture;
           mat.needsUpdate = true;
         }
-        setIsLoadingTexture(false);
+        if (viewerAliveRef.current) {
+          setIsLoadingTexture(false);
+        }
       },
       undefined,
       (err) => {
+        if (!viewerAliveRef.current || generation !== textureLoadGenerationRef.current) {
+          return;
+        }
         console.error('[360] Texture load error:', err);
-        setIsLoadingTexture(false);
+        if (viewerAliveRef.current) {
+          setIsLoadingTexture(false);
+        }
       }
     );
   }, []);
@@ -75,6 +98,8 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
 
   // Initialize Three.js scene ONCE per viewer session
   useEffect(() => {
+    viewerAliveRef.current = true;
+
     const container = containerRef.current;
     if (!container) return;
 
@@ -152,6 +177,9 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
 
     // Thorough GPU and DOM cleanup on unmount
     return () => {
+      viewerAliveRef.current = false;
+      textureLoadGenerationRef.current += 1;
+
       document.body.style.overflow = prevOverflow;
       if (reqIdRef.current) cancelAnimationFrame(reqIdRef.current);
       window.removeEventListener('resize', handleResize);
@@ -168,6 +196,15 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
       }
       renderer.dispose();
       renderer.forceContextLoss();
+
+      // Null heavy refs where safe
+      currentTextureRef.current = null;
+      sphereMeshRef.current = null;
+      rendererRef.current = null;
+      sceneRef.current = null;
+      cameraRef.current = null;
+      reqIdRef.current = null;
+
       if (
         lastActiveElementRef.current &&
         document.body.contains(lastActiveElementRef.current) &&
@@ -219,6 +256,7 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
 
   return (
     <div
+      ref={modalRef}
       role="dialog"
       aria-modal="true"
       aria-label="360° Spatial Panorama Explorer"
@@ -280,6 +318,8 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
               <button
                 key={scene.id}
                 onClick={() => handleSelectScene(scene)}
+                aria-label={`Switch panorama to ${scene.title}`}
+                aria-pressed={isActive}
                 className={`px-3.5 py-2 rounded-xl border text-left transition-all shrink-0 flex items-center gap-2.5 ${
                   isActive
                     ? 'bg-[#dfcaa3] text-[#04080f] border-[#dfcaa3]'

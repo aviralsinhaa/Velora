@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Villa } from '../../types';
 import { ArrowLeft, Check, Sparkles, X } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CompareVillasViewProps {
   villas: Villa[];
@@ -17,6 +18,9 @@ export function CompareVillasView({
   onRequestStay,
   onAskConcierge,
 }: CompareVillasViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -34,6 +38,7 @@ export function CompareVillasView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Compare Villas"

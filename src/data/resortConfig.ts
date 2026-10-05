@@ -240,7 +240,7 @@ export const veloraResort: ResortConfig = {
       duration: '3 Hours',
       privacy: 'Private',
       image: RESORT_MEDIA.experiences.sandbankLuncheon,
-      description: 'Depart by wooden dhoni to a solitary sandbank that emerges only at low tide. A canopy of hand-woven linen, sunken sand seating, and chilled seafood prepared on site.',
+      description: 'Depart by wooden dhoni to a solitary sandbank that emerges only at low tide. A canopy of hand-woven linen, sunken sand seating, and a coastal seafood course within the sandbank dining concept.',
       timing: 'Midday 12:30',
       bestTimeOfDay: 'afternoon',
     },
@@ -538,7 +538,7 @@ export const veloraResort: ResortConfig = {
       {
         type: 'Malé Arrival & Waterfront Reception',
         duration: 'On Landing',
-        description: 'Upon disembarking at Velana International Airport (MLE), seaplane transit is coordinated prior to departure northbound.',
+        description: 'Upon disembarking at Velana International Airport (MLE), seaplane timing would be planned around the international flight schedule prior to departure northbound.',
       },
       {
         type: 'Scenic Seaplane Journey',

@@ -4,6 +4,7 @@
  */
 
 import { ConciergeIntent, IntentMatch, isExplicitVillaSelection } from './intents';
+import { classifyBookingUtterance, isExplicitVillaRemoval, type BookingUtteranceKind } from './bookingClassifier';
 import { ExtractedEntities } from './entities';
 import { recommendVilla } from './recommendations';
 import { generateItinerary, ItineraryDay } from './itinerary';
@@ -159,6 +160,43 @@ export function isSingularPronounReference(text: string): boolean {
   );
 }
 
+export function getActiveNonVillaSubject(context: DialogueContext): { topic: 'dining' | 'wellness' | 'experience'; subjectId: string } | null {
+  const meta = context.previousAssistantMeta;
+  const source = context.sourceContext;
+
+  const validDiningIds = ['aura-ocean', 'ember-grill', 'tide-pavilion', 'sandbank-dining'];
+  const validWellnessIds = [
+    'velora-ocean-caress',
+    'tibetan-sound-water',
+    'sunset-solar-reset',
+    'ayurvedic-shirodhara-marma',
+  ];
+
+  if (meta?.subjectId) {
+    if (meta.topic === 'dining' || validDiningIds.includes(meta.subjectId)) {
+      return { topic: 'dining', subjectId: meta.subjectId };
+    }
+    if (meta.topic === 'wellness' || validWellnessIds.includes(meta.subjectId)) {
+      return { topic: 'wellness', subjectId: meta.subjectId };
+    }
+    if (meta.topic === 'experience') {
+      return { topic: 'experience', subjectId: meta.subjectId };
+    }
+  }
+
+  if (source?.type === 'dining' && source.id && validDiningIds.includes(source.id)) {
+    return { topic: 'dining', subjectId: source.id };
+  }
+  if (source?.type === 'wellness' && source.id && validWellnessIds.includes(source.id)) {
+    return { topic: 'wellness', subjectId: source.id };
+  }
+  if (source?.type === 'experience' && source.id) {
+    return { topic: 'experience', subjectId: source.id };
+  }
+
+  return null;
+}
+
 export function composeResponse(
   intentMatch: IntentMatch,
   entities: ExtractedEntities,
@@ -186,9 +224,11 @@ export function composeResponse(
   }
 
   // 1b. Singular Pronoun Reference Check without Referent (First-Class Antecedent Resolution)
+  const activeNonVillaSubject = getActiveNonVillaSubject(context);
   if (
     isSingularPronounReference(rawText) &&
     !resolveActiveVillaReferent(context, entities) &&
+    !activeNonVillaSubject &&
     context.sourceContext?.type !== 'wellness' &&
     context.sourceContext?.type !== 'dining' &&
     context.sourceContext?.type !== 'experience'
@@ -1159,7 +1199,15 @@ export function composeResponse(
     const guests = entities.guests || currentState.guests || 2;
     const month = entities.month || currentState.month || 'December';
 
-    const recommendation = recommendVilla(entities, rawText);
+    const isExcluded =
+      entities.villaId &&
+      /\b(?:without|exclude|excluding|don\'?t\s+include|do\s+not\s+include)\b/i.test(lower);
+
+    let chosenVilla = recommendVilla(entities, rawText).villa;
+    if (isExcluded && chosenVilla.id === entities.villaId) {
+      chosenVilla =
+        veloraResort.villas.find((v) => v.id !== entities.villaId) || veloraResort.villas[0];
+    }
 
     const { days, diningHighlight, wellnessHighlight } = generateItinerary({
       nights,
@@ -1167,7 +1215,7 @@ export function composeResponse(
       month,
       interests: entities.interests,
       removals: entities.removals,
-      villaId: recommendation.villa.id,
+      villaId: chosenVilla.id,
     });
 
     const nextTripState: TripState = {
@@ -1176,7 +1224,9 @@ export function composeResponse(
       guests,
       month,
       selectedVillaId:
-        entities.villaId && isExplicitVillaSelection(rawText)
+        isExcluded && currentState.selectedVillaId === entities.villaId
+          ? undefined
+          : entities.villaId && isExplicitVillaSelection(rawText)
           ? entities.villaId
           : currentState.selectedVillaId,
       interests: entities.interests,
@@ -1184,30 +1234,29 @@ export function composeResponse(
 
     candidate = {
       type: 'itinerary',
-      message: `I have tailored a ${nights}-night escape for ${guests === 2 ? 'the two of you' : `${guests} guests`} in ${month}, centered around the ${recommendation.villa.name}.`,
+      message: `I have tailored a ${nights}-night escape for ${guests === 2 ? 'the two of you' : `${guests} guests`} in ${month}, centered around the ${chosenVilla.name}.`,
       tripState: nextTripState,
-      recommendedVillaId: recommendation.villa.id,
-      reasons: recommendation.reasons,
+      recommendedVillaId: chosenVilla.id,
       itineraryDays: days,
       diningHighlight,
       wellnessHighlight,
       suggestedActions: [
-        { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: recommendation.villa.id, nights, guests },
-        { type: 'open_360', label: '360° TOUR', sceneId: recommendation.villa.panoramaSceneId || 'sunset-exterior', villaId: recommendation.villa.id },
-        { type: 'view_villa', label: 'VIEW VILLA', villaId: recommendation.villa.id },
+        { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: chosenVilla.id, nights, guests },
+        { type: 'open_360', label: '360° TOUR', sceneId: chosenVilla.panoramaSceneId || 'sunset-exterior', villaId: chosenVilla.id },
+        { type: 'view_villa', label: 'VIEW VILLA', villaId: chosenVilla.id },
       ],
       bookingAction: {
-        villaId: recommendation.villa.id,
+        villaId: chosenVilla.id,
         nights,
         guests,
       },
       perceptualDelayMs: 850,
       responseMeta: {
         type: 'itinerary',
-        subjectId: recommendation.villa.id,
+        subjectId: chosenVilla.id,
         topic: 'itinerary',
         hasRecommendation: true,
-        text: `I have tailored a ${nights}-night escape centered around the ${recommendation.villa.name}.`,
+        text: `I have tailored a ${nights}-night escape centered around the ${chosenVilla.name}.`,
         intent,
       },
     };
@@ -1315,10 +1364,32 @@ export function composeResponse(
   // 21. Dining
   if (intent === 'DINING') {
     const diningSource = context.sourceContext?.type === 'dining' ? context.sourceContext.id : undefined;
-    const isAura = subType === 'AURA' || diningSource?.includes('aura');
-    const isEmber = subType === 'FIRE_SMOKE' || subType === 'EMBER' || diningSource?.includes('ember');
-    const isTide = subType === 'TIDE' || diningSource?.includes('tide');
-    const isSandbank = subType === 'SAND_PAVILION' || subType === 'SANDBANK' || diningSource?.includes('sandbank');
+    const prevDiningSubject =
+      context.previousAssistantMeta?.topic === 'dining'
+        ? context.previousAssistantMeta.subjectId
+        : undefined;
+    const isAura =
+      subType === 'AURA' ||
+      subType?.includes('AURA') ||
+      diningSource?.includes('aura') ||
+      prevDiningSubject === 'aura-ocean';
+    const isEmber =
+      subType === 'FIRE_SMOKE' ||
+      subType === 'EMBER' ||
+      subType?.includes('EMBER') ||
+      diningSource?.includes('ember') ||
+      prevDiningSubject === 'ember-grill';
+    const isTide =
+      subType === 'TIDE' ||
+      subType?.includes('TIDE') ||
+      diningSource?.includes('tide') ||
+      prevDiningSubject === 'tide-pavilion';
+    const isSandbank =
+      subType === 'SAND_PAVILION' ||
+      subType === 'SANDBANK' ||
+      subType?.includes('SAND') ||
+      diningSource?.includes('sandbank') ||
+      prevDiningSubject === 'sandbank-dining';
 
     const auraVenue = veloraResort.dining.find((d) => d.id === 'aura-ocean') || veloraResort.dining[0];
     const emberVenue = veloraResort.dining.find((d) => d.id === 'ember-grill') || veloraResort.dining[1];
@@ -1332,20 +1403,53 @@ export function composeResponse(
       { type: 'prompt', label: 'SANDBANK DINING', prompt: 'Tell me about private sandbank dining.' },
     ];
 
+    const isMenuQuery =
+      context.currentUserMessage.includes('menu') ||
+      context.currentUserMessage.includes('dish') ||
+      context.currentUserMessage.includes('food') ||
+      context.currentUserMessage.includes('serve') ||
+      context.currentUserMessage.includes('eat') ||
+      context.currentUserMessage.includes('tasting') ||
+      context.currentUserMessage.includes('order');
+
+    const venueSubjectId = isAura
+      ? 'aura-ocean'
+      : isEmber
+      ? 'ember-grill'
+      : isTide
+      ? 'tide-pavilion'
+      : isSandbank
+      ? 'sandbank-dining'
+      : undefined;
+
     if (isAura) {
-      msg = `${auraVenue.name} is exceptional for dinner (${auraVenue.hours}). Cantilevered over the outer reef edge where lantern-lit tables overlook deep waters, it serves ${auraVenue.cuisine} in an ${auraVenue.setting}.`;
+      if (isMenuQuery) {
+        msg = `The menu at ${auraVenue.name} highlights ${auraVenue.cuisine}. Signature selections include ${auraVenue.signatureDish}, alongside ${auraVenue.menuHighlights?.join(', ') || 'seasonal tasting courses'}.`;
+      } else {
+        msg = `${auraVenue.name} is exceptional for dinner (${auraVenue.hours}). Cantilevered over the outer reef edge where lantern-lit tables overlook deep waters, it serves ${auraVenue.cuisine} in an ${auraVenue.setting}.`;
+      }
       actions = [
         { type: 'prompt', label: 'EMBER WOODFIRE', prompt: 'Tell me about EMBER.' },
         { type: 'prompt', label: 'SANDBANK DINING', prompt: 'Tell me about private sandbank dining.' },
       ];
     } else if (isEmber) {
-      msg = `${emberVenue.name} is our beachfront woodfire hearth (${emberVenue.hours}). ${emberVenue.description}`;
+      if ((isMenuQuery || lower.includes('serve')) && emberVenue.signatureDish) {
+        msg = `At ${emberVenue.name}, offerings focus on ${emberVenue.cuisine}, featuring ${emberVenue.signatureDish} and ${emberVenue.menuHighlights?.join(', ') || 'island woodfire specialties'}.`;
+      } else {
+        msg = `${emberVenue.name} is our beachfront woodfire hearth (${emberVenue.hours}). ${emberVenue.description}`;
+      }
       actions = [
         { type: 'prompt', label: 'AURA OVERWATER', prompt: 'Tell me about AURA.' },
         { type: 'prompt', label: 'TIDE LUNCH', prompt: 'Tell me about TIDE.' },
       ];
     } else if (isTide) {
-      msg = `${tideVenue.name} is our relaxed waterfront pavilion (${tideVenue.hours}). ${tideVenue.description}`;
+      if (lower.includes('lunch')) {
+        msg = `${tideVenue.name} is exceptional for lunch (${tideVenue.hours}), situated right at the water’s edge serving ${tideVenue.cuisine} in an ${tideVenue.setting}.`;
+      } else if (isMenuQuery && tideVenue.signatureDish) {
+        msg = `At ${tideVenue.name}, cuisine features ${tideVenue.signatureDish} alongside ${tideVenue.menuHighlights?.join(', ') || tideVenue.description}.`;
+      } else {
+        msg = `${tideVenue.name} is our relaxed waterfront pavilion (${tideVenue.hours}). ${tideVenue.description}`;
+      }
       actions = [
         { type: 'prompt', label: 'AURA DINNER', prompt: 'Tell me about dinner at AURA.' },
         { type: 'prompt', label: 'EMBER GRILL', prompt: 'Tell me about EMBER.' },
@@ -1365,6 +1469,7 @@ export function composeResponse(
       responseMeta: {
         type: 'experience',
         topic: 'dining',
+        subjectId: venueSubjectId,
         text: msg,
         intent,
       },
@@ -1374,13 +1479,13 @@ export function composeResponse(
 
   // 22. Diving & Snorkeling
   if (intent === 'DIVING' || intent === 'SNORKELING') {
-    let msg = 'Velora is encircled by a broad 8 km² lagoon with our house reef just 40 metres from the overwater villas. Depending on season and conditions, guided drift excursions along the outer reef channels may offer opportunities to observe manta rays, sea turtles, and pelagic marine life.';
+    let msg = 'Velora is encircled by a broad 8 km² lagoon with our house reef just 40 metres from the overwater villas. Depending on season and conditions, outer-reef drift exploration along the channels may offer opportunities to observe manta rays, sea turtles, and pelagic marine life.';
     const expSource = context.sourceContext?.type === 'experience' ? context.sourceContext.id : undefined;
     const isHouseReef = expSource === 'house-reef-dive' || (expSource && expSource.includes('reef')) || subType === 'REEF_DIVE';
     if (isHouseReef) {
       msg = 'The House Reef & Outer Drop-Off is well suited for beginners and certified divers alike. For beginners, the concept emphasizes calm lagoon orientation before moving toward the outer reef, with conditions and suitability assessed as part of the experience planning.';
     } else if (subType === 'MANTA') {
-      msg = 'Along the northern channel outer drop-off, seasonal currents may bring opportunities to observe reef manta rays and sea turtles. Guided drift excursions explore these channels during favorable morning tides, though wildlife sightings naturally vary with ocean conditions.';
+      msg = 'Along the northern channel outer drop-off, seasonal currents may bring opportunities to observe reef manta rays and sea turtles. Drift exploration investigates these channels during favorable morning tides, though wildlife sightings naturally vary with ocean conditions.';
     }
 
     candidate = {
@@ -1424,35 +1529,50 @@ export function composeResponse(
   if (intent === 'WELLNESS') {
     let msg = 'The Water Pavilion offers six overwater treatment sanctuaries, Tibetan singing bowl acoustic sound sessions, Ayurvedic-inspired botanical oil rituals, and sunrise ocean yoga overlooking the reef.';
     const wellnessId = context.sourceContext?.type === 'wellness' ? context.sourceContext.id : undefined;
-    const effectiveRitual = subType && ['velora-ocean-caress', 'tibetan-sound-water', 'sunset-solar-reset', 'ayurvedic-shirodhara-marma'].includes(subType)
-      ? subType
-      : wellnessId && ['velora-ocean-caress', 'tibetan-sound-water', 'sunset-solar-reset', 'ayurvedic-shirodhara-marma'].includes(wellnessId)
-      ? wellnessId
-      : undefined;
+    const prevWellnessSubject =
+      context.previousAssistantMeta?.topic === 'wellness'
+        ? context.previousAssistantMeta.subjectId
+        : undefined;
+    const effectiveRitual =
+      subType && ['velora-ocean-caress', 'tibetan-sound-water', 'sunset-solar-reset', 'ayurvedic-shirodhara-marma'].includes(subType)
+        ? subType
+        : wellnessId && ['velora-ocean-caress', 'tibetan-sound-water', 'sunset-solar-reset', 'ayurvedic-shirodhara-marma'].includes(wellnessId)
+        ? wellnessId
+        : prevWellnessSubject && ['velora-ocean-caress', 'tibetan-sound-water', 'sunset-solar-reset', 'ayurvedic-shirodhara-marma'].includes(prevWellnessSubject)
+        ? prevWellnessSubject
+        : undefined;
 
     const canonicalRitual = veloraResort.wellness.rituals.find((r) => r.id === effectiveRitual);
 
     if (canonicalRitual && effectiveRitual === 'velora-ocean-caress') {
-      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning')) {
+      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('do it') || lower.includes('do this')) {
         msg = `We recommend scheduling the ${canonicalRitual.title} (${canonicalRitual.duration}) on your arrival day or early in your stay to release travel fatigue. An unhurried afternoon session fits naturally into the suggested wellness rhythm, allowing warm botanical oils and mineral-rich sea salts to deeply restore your skin and senses for deep relaxation.`;
+      } else if (lower.includes('how long') || lower.includes('duration') || lower.includes('length')) {
+        msg = `The ${canonicalRitual.title} has a duration of ${canonicalRitual.duration}, combining warm botanical oil massage, mineral-rich sea salt exfoliation, and gentle acoustic resonance suspended above the calm lagoon waters.`;
       } else {
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} restorative full-body ceremony. It combines warm botanical oil massage, mineral-rich sea salt exfoliation, and gentle acoustic resonance suspended above the calm lagoon waters to promote deep relaxation and restorative calm.`;
       }
     } else if (canonicalRitual && effectiveRitual === 'tibetan-sound-water') {
-      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('evening')) {
+      if (lower.includes('how long') || lower.includes('duration') || lower.includes('length') || lower.includes('long is')) {
+        msg = `The ${canonicalRitual.title} is ${canonicalRitual.duration}. Immerse in warm buoyant saline water as harmonic quartz crystal bowls reverberate above and beneath the surface for acoustic rest and deep calm.`;
+      } else if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('evening') || lower.includes('do it') || lower.includes('do this')) {
         msg = `We recommend scheduling the ${canonicalRitual.title} (${canonicalRitual.duration}) in the late afternoon as the island light softens, or during early evening dusk. At this hour, the quiet tidal movement beneath the glass-floor pavilion creates an ideal acoustic environment for meditative calm and deep relaxation.`;
       } else {
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} acoustic immersion held over water. Hand-hammered Tibetan singing bowls resonate through the open-air pavilion alongside warm marine water immersion, deepening relaxation and meditative stillness.`;
       }
     } else if (canonicalRitual && effectiveRitual === 'sunset-solar-reset') {
-      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('evening')) {
+      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('evening') || lower.includes('do it') || lower.includes('do this')) {
         msg = `The ${canonicalRitual.title} (${canonicalRitual.duration}) is designed specifically for late afternoon between 17:00 and 18:30 as the sun drops toward the western horizon. Scheduling it at dusk allows cooling aloe and chilled stone therapy to soothe sun-warmed skin right before evening dining.`;
+      } else if (lower.includes('how long') || lower.includes('duration') || lower.includes('length') || lower.includes('long is')) {
+        msg = `The ${canonicalRitual.title} has a duration of ${canonicalRitual.duration}, featuring a cooling aloe-infused body mask, chilled stone pressure point therapy, and dusk breathwork.`;
       } else {
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} evening wind-down ritual. Held at dusk, it features a cooling aloe-infused body mask, chilled stone pressure point therapy, and dusk breathwork to soothe sun-warmed skin and ground the body for evening rest.`;
       }
     } else if (canonicalRitual && effectiveRitual === 'ayurvedic-shirodhara-marma') {
-      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning')) {
+      if (lower.includes('schedule') || lower.includes('when') || lower.includes('time') || lower.includes('timing') || lower.includes('afternoon') || lower.includes('morning') || lower.includes('do it') || lower.includes('do this')) {
         msg = `We recommend scheduling ${canonicalRitual.title} (${canonicalRitual.duration}) in the quiet morning or peaceful mid-afternoon. Allowing quiet rest after your session lets the warm herbal oils and marma therapy integrate for profound restorative calm.`;
+      } else if (lower.includes('how long') || lower.includes('duration') || lower.includes('length') || lower.includes('long is')) {
+        msg = `The ${canonicalRitual.title} has a duration of ${canonicalRitual.duration}.`;
       } else {
         msg = `The ${canonicalRitual.title} is a ${canonicalRitual.duration} journey for deep relaxation and mental clarity. It pairs a rhythmic warm herbal oil stream over the forehead and temples with traditional marma point therapy, releasing tension and cultivating profound sensory stillness.`;
       }
@@ -1461,6 +1581,8 @@ export function composeResponse(
     } else if (subType === 'AYURVEDA' || lower.includes('ayurved')) {
       msg = 'Our Ayurvedic-inspired rituals combine warm herb-infused botanical oils and gentle rhythmic massage, tailored to promote deep calm and unhurried rest.';
     }
+
+    const wellnessSubjectId = effectiveRitual;
 
     candidate = {
       type: 'answer',
@@ -1472,6 +1594,7 @@ export function composeResponse(
       responseMeta: {
         type: 'experience',
         topic: 'wellness',
+        subjectId: wellnessSubjectId,
         text: msg,
         intent,
       },
@@ -1508,55 +1631,273 @@ export function composeResponse(
 
   // 26. Availability / Request Stay
   if (intent === 'AVAILABILITY') {
+    const bookingKind: BookingUtteranceKind =
+      (subType as BookingUtteranceKind) || classifyBookingUtterance(rawText);
     const targetVillaId = entities.villaId || lastVillaContext || currentState.selectedVillaId;
     const nights = entities.nights || currentState.nights || 5;
     const guests = entities.guests || currentState.guests || 2;
+    const villa = targetVillaId ? veloraResort.villas.find((v) => v.id === targetVillaId) : undefined;
 
-    if (!targetVillaId) {
+    // 1. Negation / Cancellation (e.g. "Do not book...", "Don't reserve...", "Cancel the stay request")
+    if (bookingKind === 'cancel_or_decline') {
+      let cancelMsg = '';
+      let shouldClearSelection = false;
+
+      const isExplicitSelectionClearing =
+        lower.includes('clear our villa selection') ||
+        lower.includes('clear villa selection') ||
+        lower.includes('clear the villa selection') ||
+        lower.includes('remove our villa selection') ||
+        lower.includes('clear our selection') ||
+        lower.includes('clear selection');
+
+      const isVillaRemoval = isExplicitVillaRemoval(lower) && entities.villaId;
+
+      if (isExplicitSelectionClearing) {
+        shouldClearSelection = true;
+        cancelMsg = 'I have cleared the villa selection from your stay plan.';
+      } else if (isVillaRemoval) {
+        if (currentState.selectedVillaId && entities.villaId === currentState.selectedVillaId) {
+          shouldClearSelection = true;
+          cancelMsg = villa
+            ? `Of course — I have removed ${villa.name} from your stay plan.`
+            : 'Of course — I have removed the villa from your stay plan.';
+        } else {
+          // User rejected/removed a villa that wasn't the active selectedVillaId
+          const activeVilla = currentState.selectedVillaId
+            ? veloraResort.villas.find((v) => v.id === currentState.selectedVillaId)
+            : undefined;
+          cancelMsg = activeVilla && villa
+            ? `Of course — I have noted that you do not wish to stay in ${villa.name}. ${activeVilla.name} remains in your plan.`
+            : villa
+            ? `Of course — I have noted that you do not wish to stay in ${villa.name}.`
+            : 'Of course — I have noted that change in your preferences.';
+        }
+      } else if (
+        lower.includes('hold off') ||
+        lower.includes('pause') ||
+        lower.includes('don\'t submit') ||
+        lower.includes('do not submit') ||
+        lower.includes('let\'s not submit') ||
+        lower.includes('don\'t send') ||
+        lower.includes('do not send')
+      ) {
+        cancelMsg = "Of course — I won't prepare a stay request yet. Take your time to explore our island sanctuaries.";
+      } else if (
+        lower.includes('cancel the stay request') ||
+        lower.includes('cancel my stay request') ||
+        lower === 'cancel stay request'
+      ) {
+        cancelMsg = 'No stay request has been submitted from this concept.';
+      } else if (
+        lower.includes('cancel my ocean lagoon villa request') ||
+        lower.includes('cancel the ocean lagoon villa request') ||
+        lower.includes('cancel the villa request') ||
+        lower.includes('cancel booking') ||
+        lower.includes('cancel')
+      ) {
+        cancelMsg = villa
+          ? `No stay request has been submitted from this concept for ${villa.name}.`
+          : 'No stay request has been submitted from this concept.';
+      } else if (lower.includes('not ready') || lower.includes('yet')) {
+        cancelMsg = villa
+          ? `Of course — take your time. I won't prepare a stay request for ${villa.name} until you are ready.`
+          : "Of course — take your time. I won't prepare a stay request until you are ready.";
+      } else {
+        cancelMsg = villa
+          ? `Of course — I won't prepare a stay request for ${villa.name}.`
+          : "Of course — I won't prepare a stay request.";
+      }
+
       candidate = {
-        type: 'booking_handoff',
-        message: 'I would be delighted to prepare your stay request. Which villa sanctuary would you prefer, or would you like me to recommend one?',
-        bookingAction: {
-          nights,
-          guests,
-        },
+        type: 'answer',
+        message: cancelMsg,
+        ...(shouldClearSelection ? { tripState: { selectedVillaId: undefined } } : {}),
         suggestedActions: [
-          { type: 'request_stay', label: 'REQUEST YOUR STAY', nights, guests },
-          { type: 'view_villa', label: 'SUNSET POOL VILLA', villaId: 'sunset-pool-villa' },
-          { type: 'compare_villas', label: 'COMPARE VILLAS' },
+          { type: 'compare_villas', label: 'EXPLORE VILLAS' },
         ],
         perceptualDelayMs: 400,
         responseMeta: {
-          type: 'booking_handoff',
+          type: 'booking_info',
           topic: 'booking',
-          text: 'I would be delighted to prepare your stay request.',
+          subjectId: villa?.id,
+          text: cancelMsg,
           intent,
         },
       };
       return validateAndSanitizeResponse(candidate, context);
     }
 
-    const villa = veloraResort.villas.find((v) => v.id === targetVillaId) || veloraResort.villas[0];
+    // 2. Process questions (e.g. "What is the process to reserve Ocean Lagoon Villa?", "How do I book...", "What do I need to do to book...")
+    if (bookingKind === 'process_question') {
+      const processMsg = villa
+        ? `To prepare a request for ${villa.name}, review the villa details and add your preferred dates in Request Your Stay.`
+        : 'To prepare a stay request, review the architectural sanctuary details and add your preferred dates in Request Your Stay.';
+
+      candidate = {
+        type: 'answer',
+        message: processMsg,
+        suggestedActions: villa
+          ? [
+              { type: 'view_villa', label: 'VIEW VILLA', villaId: villa.id },
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ]
+          : [
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ],
+        perceptualDelayMs: 400,
+        responseMeta: {
+          type: 'booking_process',
+          topic: 'booking',
+          subjectId: villa?.id,
+          text: processMsg,
+          intent,
+        },
+      };
+      return validateAndSanitizeResponse(candidate, context);
+    }
+
+    // 3. Availability / possibility questions (e.g. "Can I book...", "Could I book...", "Would I be able to book...", "Can it be booked...")
+    if (bookingKind === 'availability_question') {
+      const availMsg = villa
+        ? `I don't have live availability in this concept, but ${villa.name} can be included in a stay request with your preferred dates.`
+        : "I don't have live availability in this concept, but any of our sanctuaries can be included in a stay request with your preferred dates.";
+
+      candidate = {
+        type: 'answer',
+        message: availMsg,
+        suggestedActions: villa
+          ? [
+              { type: 'view_villa', label: 'VIEW VILLA', villaId: villa.id },
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ]
+          : [
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ],
+        perceptualDelayMs: 400,
+        responseMeta: {
+          type: 'booking_info',
+          topic: 'booking',
+          subjectId: villa?.id,
+          text: availMsg,
+          intent,
+        },
+      };
+      return validateAndSanitizeResponse(candidate, context);
+    }
+
+    // 4. Exploratory inquiries (e.g. "I am thinking of booking...", "I might reserve...", "I may book...", "considering ... for our stay")
+    if (bookingKind === 'exploratory') {
+      const exploreMsg =
+        lower.includes('not sure') ||
+        lower.includes('unsure') ||
+        lower.includes('shouldn\'t') ||
+        lower.includes('should not')
+          ? villa
+            ? "That's fine — I can help you compare its setting, indicative rate, and features before you decide."
+            : "That's fine — I can help you compare our architectural sanctuaries, settings, and rates before you decide."
+          : villa
+          ? `I can help you compare its setting, indicative rate, and features before you decide.`
+          : 'I can help you compare our architectural sanctuaries, settings, and rates before you decide.';
+
+      candidate = {
+        type: 'answer',
+        message: exploreMsg,
+        suggestedActions: villa
+          ? [
+              { type: 'view_villa', label: 'VIEW VILLA', villaId: villa.id },
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ]
+          : [
+              { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+            ],
+        perceptualDelayMs: 400,
+        responseMeta: {
+          type: 'booking_info',
+          topic: 'booking',
+          subjectId: villa?.id,
+          text: exploreMsg,
+          intent,
+        },
+      };
+      return validateAndSanitizeResponse(candidate, context);
+    }
+
+    // 5. Genuine commitment only (e.g. "Book Ocean Lagoon Villa", "Please book...", "Can you book ... for me?")
+    if (bookingKind === 'commitment') {
+      if (!targetVillaId) {
+        candidate = {
+          type: 'booking_handoff',
+          message: 'I would be delighted to prepare your stay request. Which villa sanctuary would you prefer, or would you like me to recommend one?',
+          bookingAction: {
+            nights,
+            guests,
+          },
+          suggestedActions: [
+            { type: 'request_stay', label: 'REQUEST YOUR STAY', nights, guests },
+            { type: 'view_villa', label: 'SUNSET POOL VILLA', villaId: 'sunset-pool-villa' },
+            { type: 'compare_villas', label: 'COMPARE VILLAS' },
+          ],
+          perceptualDelayMs: 400,
+          responseMeta: {
+            type: 'booking_handoff',
+            topic: 'booking',
+            text: 'I would be delighted to prepare your stay request.',
+            intent,
+          },
+        };
+        return validateAndSanitizeResponse(candidate, context);
+      }
+
+      const villaToBook = villa || veloraResort.villas[0];
+
+      candidate = {
+        type: 'booking_handoff',
+        message: `I have prepared your stay inquiry for ${nights} nights at the ${villaToBook.name} for ${guests} guests. You can open your stay request below to tailor your dates and preferences.`,
+        recommendedVillaId: targetVillaId,
+        bookingAction: {
+          villaId: targetVillaId,
+          nights,
+          guests,
+        },
+        suggestedActions: [
+          { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: targetVillaId, nights, guests },
+          { type: 'compare_villas', label: 'COMPARE VILLAS' },
+        ],
+        perceptualDelayMs: 450,
+        responseMeta: {
+          type: 'booking_handoff',
+          topic: 'booking',
+          subjectId: targetVillaId,
+          text: `I have prepared your stay inquiry for the ${villaToBook.name}.`,
+          intent,
+        },
+      };
+      return validateAndSanitizeResponse(candidate, context);
+    }
+
+    // 6. Safe informational fallback if bookingKind === 'none' (never automatically prepare a request)
+    const infoMsg = villa
+      ? `I can share details on ${villa.name}, compare residences, or help you prepare a stay request when you are ready.`
+      : 'I can share details on our residences, compare settings, or help you prepare a stay request when you are ready.';
 
     candidate = {
-      type: 'booking_handoff',
-      message: `I have prepared your stay inquiry for ${nights} nights at the ${villa.name} for ${guests} guests. You can open your stay request below to tailor your dates and preferences.`,
-      recommendedVillaId: targetVillaId,
-      bookingAction: {
-        villaId: targetVillaId,
-        nights,
-        guests,
-      },
-      suggestedActions: [
-        { type: 'request_stay', label: 'REQUEST THIS VILLA', villaId: targetVillaId, nights, guests },
-        { type: 'compare_villas', label: 'COMPARE VILLAS' },
-      ],
-      perceptualDelayMs: 450,
+      type: 'answer',
+      message: infoMsg,
+      suggestedActions: villa
+        ? [
+            { type: 'view_villa', label: 'VIEW VILLA', villaId: villa.id },
+            { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+          ]
+        : [
+            { type: 'compare_villas', label: 'COMPARE ALL VILLAS' },
+          ],
+      perceptualDelayMs: 400,
       responseMeta: {
-        type: 'booking_handoff',
+        type: 'booking_info',
         topic: 'booking',
-        subjectId: targetVillaId,
-        text: `I have prepared your stay inquiry for the ${villa.name}.`,
+        subjectId: villa?.id,
+        text: infoMsg,
         intent,
       },
     };

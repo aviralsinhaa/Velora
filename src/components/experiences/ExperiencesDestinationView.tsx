@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { veloraResort } from '../../data/resortConfig';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ConciergeSourceContext } from '../../data/resortContext';
 import { ArrowLeft, Clock, Sparkles, X, Compass, Users } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface ExperiencesDestinationViewProps {
   onClose: () => void;
@@ -15,6 +16,9 @@ export function ExperiencesDestinationView({
   onAskConcierge,
   onRequestStay,
 }: ExperiencesDestinationViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   const [activeCategory, setActiveCategory] = useState<'all' | 'ocean' | 'private' | 'culinary'>('all');
 
   useEffect(() => {
@@ -64,6 +68,7 @@ export function ExperiencesDestinationView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Experiences at Velora"
@@ -134,7 +139,7 @@ export function ExperiencesDestinationView({
               Moments Beyond the Shore
             </h1>
             <p className="font-sans text-xs sm:text-sm text-white/70 max-w-xl font-light">
-              From sunset catamaran sailing and guided outer reef channel dives to deserted sandbank luncheons across Noonu Atoll.
+              From sunset catamaran sailing and outer reef channel diving to deserted sandbank luncheons across Noonu Atoll.
             </p>
           </div>
 

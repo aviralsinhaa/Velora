@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { veloraResort } from '../../data/resortConfig';
 import { X, Calendar, Users, Check, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -37,6 +38,9 @@ export function BookingModal({
   const [guestEmail, setGuestEmail] = useState('');
   const [notes, setNotes] = useState(initialNotes || '');
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalContainerRef, isOpen, { autoFocusFirst: true });
 
   // Update when initial values change
   useEffect(() => {
@@ -103,6 +107,7 @@ export function BookingModal({
 
   return (
     <div
+      ref={modalContainerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Request Your Stay"
@@ -214,19 +219,21 @@ export function BookingModal({
               {/* Villa Selector */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
+                  <label id="booking-villa-label" className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
                     SELECT A VILLA
                   </label>
                   {villaError && (
                     <span className="text-[11px] text-rose-300 font-sans">{villaError}</span>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="group" aria-labelledby="booking-villa-label">
                   {veloraResort.villas.map((v) => (
                     <button
                       key={v.id}
                       type="button"
                       onClick={() => setSelectedVillaId(v.id)}
+                      aria-label={`Select ${v.name}, $${v.pricePerNight.toLocaleString()} per night`}
+                      aria-pressed={selectedVillaId === v.id}
                       className={`p-3.5 rounded-xl border text-left transition-all ${
                         selectedVillaId === v.id
                           ? 'border-[#dfcaa3] bg-[#dfcaa3]/10 text-white'
@@ -245,29 +252,33 @@ export function BookingModal({
               {/* Date & Nights */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
+                  <label htmlFor="booking-arrival-date" className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
                     ARRIVAL DATE
                   </label>
                   <input
+                    id="booking-arrival-date"
                     type="date"
                     min={todayStr}
                     value={checkInDate}
                     onChange={(e) => setCheckInDate(e.target.value)}
                     required
+                    aria-label="Arrival date"
                     className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs font-mono text-white focus:outline-none focus:border-[#dfcaa3]"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
+                  <label id="booking-duration-label" className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
                     DURATION
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2" role="group" aria-labelledby="booking-duration-label">
                     {[3, 5, 7, 10].map((n) => (
                       <button
                         key={n}
                         type="button"
                         onClick={() => setNights(n)}
+                        aria-label={`${n} nights duration`}
+                        aria-pressed={nights === n}
                         className={`flex-1 py-3 rounded-xl border text-xs font-mono transition-all ${
                           nights === n
                             ? 'border-[#dfcaa3] bg-[#dfcaa3] text-[#04080f] font-medium'
@@ -283,15 +294,17 @@ export function BookingModal({
 
               {/* Guest Count */}
               <div className="space-y-2">
-                <label className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
+                <label id="booking-party-label" className="text-[10px] uppercase tracking-[0.2em] font-sans text-white/50 block">
                   PARTY SIZE
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-2" role="group" aria-labelledby="booking-party-label">
                   {[1, 2, 4, 8].map((g) => (
                     <button
                       key={g}
                       type="button"
                       onClick={() => setGuestCount(g)}
+                      aria-label={g === 1 ? 'Solo guest' : g === 2 ? 'Couple (2 guests)' : `${g} guests`}
+                      aria-pressed={guestCount === g}
                       className={`flex-1 py-2.5 rounded-xl border text-xs font-sans transition-all ${
                         guestCount === g
                           ? 'border-[#dfcaa3] bg-[#dfcaa3] text-[#04080f] font-medium'
@@ -311,27 +324,33 @@ export function BookingModal({
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
+                    id="booking-guest-name"
                     type="text"
                     placeholder="Full Name"
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     required
+                    aria-label="Full Name"
                     className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30"
                   />
                   <input
+                    id="booking-guest-email"
                     type="email"
                     placeholder="Email Address"
                     value={guestEmail}
                     onChange={(e) => setGuestEmail(e.target.value)}
                     required
+                    aria-label="Email Address"
                     className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30"
                   />
                 </div>
                 <textarea
+                  id="booking-special-requests"
                   placeholder="Special requests, dietary preferences, or arrival notes..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
+                  aria-label="Special requests, dietary preferences, or arrival notes"
                   className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30 resize-none font-light"
                 />
               </div>

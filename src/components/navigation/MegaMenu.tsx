@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { X, ArrowRight, Sparkles } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface MegaMenuProps {
   isOpen: boolean;
@@ -33,6 +34,9 @@ export function MegaMenu({
 }: MegaMenuProps) {
   const [activeCategory, setActiveCategory] = useState<'villas' | 'dining' | 'wellness' | 'experiences' | 'island' | 'transit'>('villas');
   const lastActiveElementRef = useRef<HTMLElement | null>(null);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  useFocusTrap(menuContainerRef, isOpen, { autoFocusFirst: true });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,6 +101,7 @@ export function MegaMenu({
 
   return (
     <div
+      ref={menuContainerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Resort Navigation Menu"
@@ -127,41 +132,46 @@ export function MegaMenu({
               {/* 01 The Island */}
               <div
                 onMouseEnter={() => setActiveCategory('island')}
-                className="group cursor-pointer border-b border-white/10 pb-3"
+                className="group border-b border-white/10 pb-3"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onNavigateSection('island');
                     onClose();
                   }}
-                  className="flex items-baseline justify-between"
+                  onFocus={() => setActiveCategory('island')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     The Island
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">01</span>
-                </div>
+                </button>
               </div>
 
               {/* 02 Villas with Sub-links */}
               <div
                 onMouseEnter={() => setActiveCategory('villas')}
-                className="space-y-2 border-b border-white/10 pb-3"
+                className="space-y-2 border-b border-white/10 pb-3 group"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onNavigateSection('stay');
                     onClose();
                   }}
-                  className="flex items-baseline justify-between cursor-pointer group"
+                  onFocus={() => setActiveCategory('villas')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     Villas & Pavilions
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">02</span>
-                </div>
+                </button>
                 <div className="flex flex-wrap gap-x-4 gap-y-1.5 pt-1 text-xs font-sans text-white/60">
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenVillaDetail('sunset-pool-villa');
                       onClose();
@@ -172,6 +182,7 @@ export function MegaMenu({
                   </button>
                   <span className="text-white/20">·</span>
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenVillaDetail('ocean-lagoon-villa');
                       onClose();
@@ -182,6 +193,7 @@ export function MegaMenu({
                   </button>
                   <span className="text-white/20">·</span>
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenVillaDetail('beach-reserve-residence');
                       onClose();
@@ -192,6 +204,7 @@ export function MegaMenu({
                   </button>
                   <span className="text-white/20">·</span>
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenVillaDetail('velora-private-estate');
                       onClose();
@@ -202,6 +215,7 @@ export function MegaMenu({
                   </button>
                   <span className="text-white/20">·</span>
                   <button
+                    type="button"
                     onClick={() => {
                       onOpenCompareVillas();
                       onClose();
@@ -216,20 +230,22 @@ export function MegaMenu({
               {/* 03 Dining */}
               <div
                 onMouseEnter={() => setActiveCategory('dining')}
-                className="group cursor-pointer border-b border-white/10 pb-3"
+                className="group border-b border-white/10 pb-3"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onOpenDining();
                     onClose();
                   }}
-                  className="flex items-baseline justify-between"
+                  onFocus={() => setActiveCategory('dining')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     Dining
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">03</span>
-                </div>
+                </button>
                 <div className="flex gap-4 pt-1 text-xs font-sans text-white/60">
                   <span>AURA (Japanese)</span>
                   <span className="text-white/20">·</span>
@@ -242,20 +258,22 @@ export function MegaMenu({
               {/* 04 Experiences */}
               <div
                 onMouseEnter={() => setActiveCategory('experiences')}
-                className="group cursor-pointer border-b border-white/10 pb-3"
+                className="group border-b border-white/10 pb-3"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onOpenExperiences();
                     onClose();
                   }}
-                  className="flex items-baseline justify-between"
+                  onFocus={() => setActiveCategory('experiences')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     Experiences
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">04</span>
-                </div>
+                </button>
                 <div className="flex gap-4 pt-1 text-xs font-sans text-white/60">
                   <span>Reef Dive</span>
                   <span className="text-white/20">·</span>
@@ -268,39 +286,43 @@ export function MegaMenu({
               {/* 05 Wellness */}
               <div
                 onMouseEnter={() => setActiveCategory('wellness')}
-                className="group cursor-pointer border-b border-white/10 pb-3"
+                className="group border-b border-white/10 pb-3"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onOpenWellness();
                     onClose();
                   }}
-                  className="flex items-baseline justify-between"
+                  onFocus={() => setActiveCategory('wellness')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     Wellness & The Water Pavilion
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">05</span>
-                </div>
+                </button>
               </div>
 
               {/* 06 Discover Photography */}
               <div
                 onMouseEnter={() => setActiveCategory('island')}
-                className="group cursor-pointer border-b border-white/10 pb-3"
+                className="group border-b border-white/10 pb-3"
               >
-                <div
+                <button
+                  type="button"
                   onClick={() => {
                     onNavigateSection('discover');
                     onClose();
                   }}
-                  className="flex items-baseline justify-between"
+                  onFocus={() => setActiveCategory('island')}
+                  className="w-full flex items-baseline justify-between cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3] rounded-xs"
                 >
                   <span className="font-editorial text-2xl sm:text-4xl text-white group-hover:text-[#dfcaa3] transition-colors">
                     Photography & Stories
                   </span>
                   <span className="text-[10px] uppercase tracking-widest text-[#dfcaa3] font-mono">06</span>
-                </div>
+                </button>
               </div>
 
               {/* 07 Getting Here & Practical Info */}

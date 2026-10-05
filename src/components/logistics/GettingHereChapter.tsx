@@ -53,7 +53,7 @@ export function GettingHereChapter({ onOpenGettingHereDetails }: GettingHereChap
             </div>
 
             <p className="font-sans text-xs text-white/50 font-light">
-              Waterfront lounge access in Malé with refreshments and flight coordination before departure.
+              Arrival timing in Malé would be planned around the onward seaplane departure.
             </p>
 
             <div className="pt-2">
@@ -62,16 +62,18 @@ export function GettingHereChapter({ onOpenGettingHereDetails }: GettingHereChap
                 data-cursor="TRANSIT"
                 className="editorial-link"
               >
-                <span>Explore Travel Logistics & Lounge Details</span>
+                <span>Explore Travel Logistics & Transfer Details</span>
                 <ArrowRight className="w-3.5 h-3.5 text-[#dfcaa3]" />
               </button>
             </div>
           </div>
 
           <div className="lg:col-span-7">
-            <div
+            <button
+              type="button"
               onClick={onOpenGettingHereDetails}
-              className="rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] sm:aspect-[16/9] w-full shadow-2xl cursor-pointer group"
+              aria-label="View travel logistics and seaplane transfer details"
+              className="block w-full rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] sm:aspect-[16/9] shadow-2xl cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3]"
             >
               <img
                 src={RESORT_MEDIA.arrival.seaplaneLagoon}
@@ -79,7 +81,7 @@ export function GettingHereChapter({ onOpenGettingHereDetails }: GettingHereChap
                 className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-700"
                 loading="lazy"
               />
-            </div>
+            </button>
           </div>
         </div>
       </div>

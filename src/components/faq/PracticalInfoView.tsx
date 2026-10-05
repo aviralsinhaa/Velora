@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ChevronDown, Sparkles, X, HelpCircle } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface PracticalInfoViewProps {
   onClose: () => void;
@@ -12,6 +13,9 @@ export function PracticalInfoView({
   onAskConcierge,
   onRequestStay,
 }: PracticalInfoViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   useEffect(() => {
@@ -32,11 +36,11 @@ export function PracticalInfoView({
   const faqs = [
     {
       q: 'What are the check-in and check-out times?',
-      a: 'Official check-in is at 15:00 and check-out is at 12:00. However, depending on seaplane arrivals and departures, we provide complimentary transit villa access and hospitality lounge facilities so your island experience remains unhurried from touchdown to departure.',
+      a: 'Official check-in is at 15:00 and check-out is at 12:00. Depending on seaplane arrivals and departures, transit timing and hospitality arrangements are coordinated so your island experience remains unhurried from touchdown to departure.',
     },
     {
       q: 'How does the seaplane transfer operate?',
-      a: 'Guests arrive via an approximate 45-minute scenic seaplane journey from Velana International Airport in Malé (MLE). Seaplane transfers operate during daylight hours and are coordinated alongside your international flight arrival schedule.',
+      a: 'Guests arrive via an approximate 45-minute scenic seaplane journey from Velana International Airport in Malé (MLE). Seaplane transfers operate during daylight hours. Seaplane timing would be planned around the international flight schedule.',
     },
     {
       q: 'Are children welcome at Velora?',
@@ -66,6 +70,7 @@ export function PracticalInfoView({
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Practical Information - Velora Private Island"
@@ -141,6 +146,7 @@ export function PracticalInfoView({
               <div key={idx} className="py-5">
                 <button
                   onClick={() => setOpenIndex(isOpen ? null : idx)}
+                  aria-expanded={isOpen}
                   className="w-full flex items-center justify-between gap-4 text-left group"
                 >
                   <span className="font-editorial text-xl sm:text-2xl text-white group-hover:text-[#dfcaa3] transition-colors">

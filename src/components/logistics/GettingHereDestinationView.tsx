@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ArrowLeft, Plane, Clock, ShieldCheck, Sparkles, X, Luggage } from 'lucide-react';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface GettingHereDestinationViewProps {
   onClose: () => void;
@@ -13,6 +14,9 @@ export function GettingHereDestinationView({
   onAskConcierge,
   onRequestStay,
 }: GettingHereDestinationViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(containerRef, true, { autoFocusFirst: true });
+
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -38,8 +42,8 @@ export function GettingHereDestinationView({
     {
       step: '02',
       title: 'Seaplane Departure Terminal',
-      subtitle: 'Restoration & Refreshments',
-      desc: 'Terminal lounge facilities provide refreshments and comfortable seating while seaplane departures are scheduled.',
+      subtitle: 'Transfer Planning & Comfort',
+      desc: 'Terminal facilities provide comfortable seating while onward seaplane departures are scheduled.',
     },
     {
       step: '03',
@@ -50,13 +54,14 @@ export function GettingHereDestinationView({
     {
       step: '04',
       title: 'Arrival at Velora Pontoon',
-      subtitle: 'Direct Lagoon Welcome',
-      desc: 'Your seaplane lands gently on the calm outer lagoon pontoon. Step onto the teak boardwalk and transfer directly to your private villa without front-desk delays.',
+      subtitle: 'Outer Lagoon Welcome',
+      desc: 'Your seaplane lands gently on the calm outer lagoon pontoon. The arrival concept transitions from the outer-lagoon pontoon toward the villa areas.',
     },
   ];
 
   return (
     <div
+      ref={containerRef}
       role="dialog"
       aria-modal="true"
       aria-label="Getting Here - Velora Private Island"
@@ -193,7 +198,7 @@ export function GettingHereDestinationView({
                 <span>Daylight Flight Window</span>
               </div>
               <p className="text-white/70 leading-relaxed">
-                Seaplanes operate during daylight hours. Flight timing is coordinated alongside your international arrival schedule into Malé.
+                Seaplanes operate during daylight hours. Seaplane timing would be planned around the international flight schedule into Malé.
               </p>
             </div>
 

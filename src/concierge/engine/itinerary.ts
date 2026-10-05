@@ -83,7 +83,7 @@ export function generateItinerary(config: ItineraryConfig): {
         day: 'Day 04',
         time: '12:30',
         title: 'Castaway Sandbank Luncheon',
-        description: 'Depart by wooden dhoni to a solitary sandbank that emerges only at low tide. A canopy of hand-woven linen, sunken sand seating, and chilled seafood prepared on site.',
+        description: 'Depart by wooden dhoni to a solitary sandbank that emerges only at low tide. A canopy of hand-woven linen, sunken sand seating, and a coastal seafood course within the sandbank dining concept.',
       });
     }
   }
@@ -94,7 +94,7 @@ export function generateItinerary(config: ItineraryConfig): {
       day: 'Day 05',
       time: '20:00',
       title: 'Lantern-Lit Private Sandbank Dining',
-      description: 'One hundred lanterns on solitary sand with curated coastal delicacies and fresh seafood prepared on site.',
+      description: 'One hundred lanterns on solitary sand with curated coastal delicacies and a coastal seafood course within the sandbank dining concept.',
     });
   }
 

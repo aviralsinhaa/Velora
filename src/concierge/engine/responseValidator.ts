@@ -85,9 +85,9 @@ export function validateAndSanitizeResponse(
     } else if (topic === 'villa') {
       message = "Would you like me to share additional architectural dimensions or compare this sanctuary with our other residences?";
     } else if (topic === 'dining') {
-      message = "We can also prepare private beach or sandbank dining arrangements for your stay.";
+      message = "Private beach or sandbank dining can also form part of the stay concept.";
     } else if (topic === 'arrival') {
-      message = "Seaplane transfers from Malé are coordinated alongside your international flight arrival schedule.";
+      message = "Seaplane timing would be planned around the international flight schedule.";
     } else {
       message = "Let me know if you would like further details on this, or if you wish to explore other sanctuaries.";
     }

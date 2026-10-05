@@ -90,14 +90,17 @@ export function processConciergeInput(
   }
 
   // 7. Update Trip State
-  // selectedVillaId must ONLY change on genuine user selection, never merely because a villa was discussed or recommended.
+  let nextSelectedVillaId = sessionContext.activeTripState.selectedVillaId;
+  if (explicitlySelectedVillaId) {
+    nextSelectedVillaId = explicitlySelectedVillaId;
+  } else if (composed.tripState && 'selectedVillaId' in composed.tripState) {
+    nextSelectedVillaId = composed.tripState.selectedVillaId;
+  }
+
   const nextTripState: TripState = {
     ...sessionContext.activeTripState,
     ...(composed.tripState || {}),
-    selectedVillaId:
-      explicitlySelectedVillaId ||
-      composed.tripState?.selectedVillaId ||
-      sessionContext.activeTripState.selectedVillaId,
+    selectedVillaId: nextSelectedVillaId,
   };
 
   // 8. Record turns
