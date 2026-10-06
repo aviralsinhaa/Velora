@@ -3,6 +3,9 @@ import { veloraResort } from '../../data/resortConfig';
 import { Villa } from '../../types';
 import { oceanAudio } from '../../utils/audio';
 import { ArrowLeft, ArrowRight, Compass, X } from 'lucide-react';
+import { useScrollMotion } from '../../hooks/useScrollMotion';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
+import gsap from 'gsap';
 
 interface StayChapterProps {
   onReserveVilla: (villaId: string) => void;
@@ -20,15 +23,168 @@ export function StayChapter({
   onOpenCompareVillas,
 }: StayChapterProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [outgoingVilla, setOutgoingVilla] = useState<Villa | null>(null);
   const [selectedVilla, setSelectedVilla] = useState<Villa | null>(null);
   const touchStartX = useRef<number | null>(null);
+  const prevIndexRef = useRef<number>(0);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const chapterDotRef = useRef<HTMLSpanElement>(null);
+  const chapterTextRef = useRef<HTMLSpanElement>(null);
+  const chapterLineRef = useRef<HTMLDivElement>(null);
+  const headlineRef = useRef<HTMLHeadingElement>(null);
+  const imageFrameRef = useRef<HTMLDivElement>(null);
+  const activeImgRef = useRef<HTMLImageElement>(null);
+  const outgoingImgRef = useRef<HTMLImageElement>(null);
+  const infoColRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLSpanElement>(null);
+  const descRef = useRef<HTMLParagraphElement>(null);
+  const specsRef = useRef<HTMLDivElement>(null);
+  const priceRef = useRef<HTMLDivElement>(null);
+  const navTabsRef = useRef<HTMLDivElement>(null);
+  const ctaContainerRef = useRef<HTMLDivElement>(null);
 
   const villas = veloraResort.villas;
   const currentVilla = villas[currentIndex];
 
+  // 1. Initial Section Entrance: ONE timeline, ONE section trigger (Task 5)
+  useScrollMotion(sectionRef, (_ctx, isReducedMotion) => {
+    if (isReducedMotion || !sectionRef.current) return;
+
+    const isMobile = window.innerWidth < 768;
+    const yMove = isMobile ? 8 : 14;
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: sectionRef.current,
+        start: 'top 80%',
+        toggleActions: 'play none none none',
+      },
+    });
+
+    // Chapter marker
+    if (chapterDotRef.current) {
+      tl.fromTo(chapterDotRef.current, { scale: 0 }, { scale: 1, duration: 0.45, ease: 'power3.out' }, 0);
+    }
+    if (chapterTextRef.current) {
+      tl.fromTo(chapterTextRef.current, { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out' }, 0.04);
+    }
+    if (chapterLineRef.current) {
+      tl.fromTo(chapterLineRef.current, { scaleX: 0 }, { scaleX: 1, transformOrigin: 'left', duration: 0.65, ease: 'power3.out' }, 0.06);
+    }
+
+    // Headline
+    if (headlineRef.current) {
+      tl.fromTo(headlineRef.current, { opacity: 0, y: yMove }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.1);
+    }
+
+    // Image frame: opacity 0 -> 1, inner image scale 1.025 -> 1 (zero clip-path!)
+    if (imageFrameRef.current) {
+      tl.fromTo(imageFrameRef.current, { opacity: 0 }, { opacity: 1, duration: 0.8, ease: 'power2.out' }, 0.18);
+    }
+    if (activeImgRef.current) {
+      tl.fromTo(activeImgRef.current, { scale: 1.02 }, { scale: 1.0, duration: 0.9, ease: 'power3.out' }, 0.18);
+    }
+
+    // Villa subtitle & title
+    if (subtitleRef.current) {
+      tl.fromTo(subtitleRef.current, { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }, 0.28);
+    }
+    if (titleRef.current) {
+      tl.fromTo(titleRef.current, { opacity: 0, y: yMove }, { opacity: 1, y: 0, duration: 0.65, ease: 'power3.out' }, 0.32);
+    }
+
+    // Body description
+    if (descRef.current) {
+      tl.fromTo(descRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0.38);
+    }
+
+    // Metadata & specs
+    if (specsRef.current) {
+      tl.fromTo(
+        specsRef.current.children,
+        { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, stagger: 0.05, duration: 0.5, ease: 'power2.out' },
+        0.44
+      );
+    }
+
+    // Navigation tabs & CTA
+    if (navTabsRef.current) {
+      tl.fromTo(navTabsRef.current, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out' }, 0.48);
+    }
+    if (ctaContainerRef.current) {
+      tl.fromTo(ctaContainerRef.current, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }, 0.52);
+    }
+  });
+
+  // 2. Cinematic Villa Change: True Two-Layer Overlapping Crossfade (Task 1)
   useEffect(() => {
-    oceanAudio.setSoundscapeZone('stay');
-  }, []);
+    if (prevIndexRef.current !== currentIndex) {
+      setOutgoingVilla(villas[prevIndexRef.current]);
+      prevIndexRef.current = currentIndex;
+
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (!mediaQuery.matches) {
+        // Outgoing layer: starts at opacity 1, fades 1 -> 0, scales 1 -> 1.01
+        if (outgoingImgRef.current) {
+          gsap.fromTo(
+            outgoingImgRef.current,
+            { opacity: 1, scale: 1.0 },
+            { opacity: 0, scale: 1.01, duration: 0.65, ease: 'power2.inOut' }
+          );
+        }
+
+        // Active new image: starts at opacity 0, fades 0 -> 1, scales 1.02 -> 1
+        if (activeImgRef.current) {
+          gsap.fromTo(
+            activeImgRef.current,
+            { opacity: 0, scale: 1.02 },
+            { opacity: 1, scale: 1.0, duration: 0.7, ease: 'power2.out' }
+          );
+        }
+
+        // Villa title: clean editorial exit & entrance
+        if (titleRef.current) {
+          gsap.fromTo(
+            titleRef.current,
+            { y: 12, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }
+          );
+        }
+        if (subtitleRef.current) {
+          gsap.fromTo(
+            subtitleRef.current,
+            { opacity: 0, x: -6 },
+            { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
+          );
+        }
+        if (descRef.current) {
+          gsap.fromTo(
+            descRef.current,
+            { opacity: 0, y: 8 },
+            { opacity: 1, y: 0, duration: 0.55, delay: 0.05, ease: 'power2.out' }
+          );
+        }
+
+        // Metadata: stagger specs once (price is child 4 of specs, no duplicate animation!)
+        if (specsRef.current) {
+          gsap.fromTo(
+            specsRef.current.children,
+            { opacity: 0, y: 6 },
+            { opacity: 1, y: 0, stagger: 0.04, duration: 0.45, delay: 0.08, ease: 'power2.out' }
+          );
+        }
+      }
+
+      const timer = setTimeout(() => {
+        setOutgoingVilla(null);
+      }, 700);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, villas]);
 
   const nextVilla = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % villas.length);
@@ -38,7 +194,7 @@ export function StayChapter({
     setCurrentIndex((prev) => (prev - 1 + villas.length) % villas.length);
   }, [villas.length]);
 
-  // Touch Swipe Support
+  // Touch Swipe Support: Scoped strictly to villa image frame (Task 2)
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
@@ -51,83 +207,121 @@ export function StayChapter({
     touchStartX.current = null;
   };
 
-  // Keyboard navigation
+  // Keyboard navigation: Scoped to villa carousel container, NOT global window (Task 2)
+  const handleVillaKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      nextVilla();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prevVilla();
+    }
+  };
+
+  // Only listen to Escape on window when selectedVilla modal is active
   useEffect(() => {
+    if (!selectedVilla) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedVilla) {
-        if (e.key === 'Escape') setSelectedVilla(null);
-        return;
-      }
-      if (e.key === 'ArrowRight') nextVilla();
-      if (e.key === 'ArrowLeft') prevVilla();
+      if (e.key === 'Escape') setSelectedVilla(null);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [nextVilla, prevVilla, selectedVilla]);
+  }, [selectedVilla]);
 
   return (
-    <section id="stay" className="relative w-full py-20 sm:py-28 lg:py-40 bg-[#04080f] text-[#ece6dc] overflow-hidden">
+    <section
+      id="stay"
+      ref={sectionRef}
+      className="relative w-full py-20 sm:py-28 lg:py-40 bg-[#04080f] text-[#ece6dc] overflow-hidden"
+    >
       <div className="editorial-container">
         {/* Chapter Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/10 pb-5 mb-10 sm:mb-16">
-          <div className="space-y-1">
-            <span className="text-[10px] uppercase tracking-[0.32em] text-[#dfcaa3] font-sans font-medium block">
-              CHAPTER 03 · STAY
-            </span>
-            <h2 className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-white font-light tracking-wide">
-              Architectural Sanctuaries
-            </h2>
-          </div>
+        <div className="border-b border-white/10 pb-5 mb-10 sm:mb-16">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span ref={chapterDotRef} className="w-1.5 h-1.5 rounded-full bg-[#dfcaa3]" />
+                <span ref={chapterTextRef} className="text-[10px] uppercase tracking-[0.32em] text-[#dfcaa3] font-sans font-medium block">
+                  CHAPTER 03 · STAY
+                </span>
+              </div>
+              <h2 ref={headlineRef} className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-white font-light tracking-wide">
+                Architectural Sanctuaries
+              </h2>
+            </div>
 
-          {/* Villa Selector Index & Navigation */}
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 sm:mt-0">
-            {onOpenCompareVillas && (
-              <button
-                onClick={onOpenCompareVillas}
-                data-cursor="COMPARE"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-[#dfcaa3] hover:text-white text-[11px] uppercase tracking-[0.18em] font-sans transition-all"
-              >
-                <span>Compare Villas →</span>
-              </button>
-            )}
-            <span className="font-mono text-xs text-white/50 tracking-widest">
-              0{currentIndex + 1} / 0{villas.length}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={prevVilla}
-                data-cursor="PREV"
-                className="w-9 h-9 rounded-full border border-white/20 hover:border-white text-white flex items-center justify-center transition-colors"
-                aria-label="Previous villa"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={nextVilla}
-                data-cursor="NEXT"
-                className="w-9 h-9 rounded-full border border-white/20 hover:border-white text-white flex items-center justify-center transition-colors"
-                aria-label="Next villa"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+            {/* Villa Selector Index & Navigation */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-4 sm:mt-0">
+              {onOpenCompareVillas && (
+                <button
+                  onClick={onOpenCompareVillas}
+                  data-cursor="COMPARE"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-[#dfcaa3] hover:text-white text-[11px] uppercase tracking-[0.18em] font-sans transition-all"
+                >
+                  <span>Compare Villas →</span>
+                </button>
+              )}
+              <span className="font-mono text-xs text-white/50 tracking-widest">
+                0{currentIndex + 1} / 0{villas.length}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={prevVilla}
+                  data-cursor="PREV"
+                  className="w-9 h-9 rounded-full border border-white/20 hover:border-white text-white flex items-center justify-center transition-colors"
+                  aria-label="Previous villa"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={nextVilla}
+                  data-cursor="NEXT"
+                  className="w-9 h-9 rounded-full border border-white/20 hover:border-white text-white flex items-center justify-center transition-colors"
+                  aria-label="Next villa"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           </div>
+          <div ref={chapterLineRef} className="w-full h-[1px] bg-white/10 mt-5 origin-left" />
         </div>
 
         {/* 12-Column Architectural Spread: 7 Cols Photography | 5 Cols Villa Information */}
-        <div
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          className="editorial-grid-12 items-center"
-        >
+        <div className="editorial-grid-12 items-center">
           {/* Columns 1-7: Dominant Villa Photography Canvas */}
           <div className="lg:col-span-7">
-            <div className="relative rounded-xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] sm:aspect-[16/10] shadow-2xl group">
-              <img
+            <div
+              ref={imageFrameRef}
+              tabIndex={0}
+              role="region"
+              aria-label="Sanctuary Villa Visual Stage (Use Arrow keys to switch)"
+              onKeyDown={handleVillaKeyDown}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              className="relative rounded-xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] sm:aspect-[16/10] shadow-xl group select-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[#dfcaa3]/60"
+            >
+              {/* Outgoing Villa Image Layer (Task 1: Overlaps and fades out with scale 1 -> 1.01) */}
+              {outgoingVilla && (
+                <ResponsiveImage
+                  ref={outgoingImgRef}
+                  key={`out-${outgoingVilla.id}`}
+                  src={outgoingVilla.featuredImage}
+                  alt={outgoingVilla.name}
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none z-10"
+                />
+              )}
+
+              {/* Active Current Villa Image Layer (Task 1: Scales 1.02 -> 1, Fades 0 -> 1) */}
+              <ResponsiveImage
+                ref={activeImgRef}
+                key={`act-${currentVilla.id}`}
                 src={currentVilla.featuredImage}
                 alt={currentVilla.name}
                 loading="lazy"
-                className="w-full h-full object-cover velora-image-grade transition-all duration-700"
+                sizes="(max-width: 1024px) 100vw, 60vw"
+                className="w-full h-full object-cover select-none"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-black/20 pointer-events-none" />
 
@@ -140,7 +334,7 @@ export function StayChapter({
                 <button
                   onClick={() => onOpen360Scene(currentVilla.panoramaSceneId!)}
                   data-cursor="360°"
-                  className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 text-white text-[10px] uppercase tracking-[0.2em] font-sans backdrop-blur-md transition-all"
+                  className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/60 hover:bg-black/90 border border-white/20 text-white text-[10px] uppercase tracking-[0.2em] font-sans backdrop-blur-md transition-colors"
                 >
                   <Compass className="w-3.5 h-3.5 text-[#dfcaa3]" />
                   <span>360° VIEW</span>
@@ -148,49 +342,69 @@ export function StayChapter({
               )}
             </div>
 
-            {/* Quick Villa Tab Strip */}
-            <div className="grid grid-cols-4 gap-2.5 mt-3">
-              {villas.map((v, idx) => (
-                <button
-                  key={v.id}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`py-2 px-1 text-left border-b-2 transition-all ${
-                    idx === currentIndex
-                      ? 'border-[#dfcaa3] text-white'
-                      : 'border-transparent text-white/40 hover:text-white/70'
-                  }`}
-                >
-                  <span className="font-mono text-[10px] block">0{idx + 1}</span>
-                  <span className="text-[10px] font-sans uppercase tracking-wider truncate block">
-                    {v.name.replace(' Villa', '').replace(' Residence', '')}
-                  </span>
-                </button>
-              ))}
+            {/* Quick Villa Tab Strip with Sliding Underline (Task 5) */}
+            <div ref={navTabsRef} className="relative mt-3 pt-1 border-b border-white/10">
+              <div className="grid grid-cols-4 gap-2.5">
+                {villas.map((v, idx) => (
+                  <button
+                    key={v.id}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`py-2 px-1 text-left transition-colors duration-300 ${
+                      idx === currentIndex ? 'text-white' : 'text-white/40 hover:text-white/70'
+                    }`}
+                  >
+                    <span className="font-mono text-[10px] block">0{idx + 1}</span>
+                    <span className="text-[10px] font-sans uppercase tracking-wider truncate block">
+                      {v.name.replace(' Villa', '').replace(' Residence', '')}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {/* Sliding Underline Indicator */}
+              <div
+                className="absolute bottom-0 h-[2px] bg-[#dfcaa3] transition-[left,width] duration-300 ease-out"
+                style={{
+                  left: `${currentIndex * 25}%`,
+                  width: '25%',
+                }}
+              />
             </div>
           </div>
 
-          {/* Columns 8-12 (lg:col-span-5): Clean Architectural Hierarchy (No heavy SaaS card) */}
-          <div className="lg:col-span-5 space-y-6 lg:pl-6 text-left">
-            <div className="space-y-2">
+          {/* Columns 8-12 (lg:col-span-5): Clean Architectural Hierarchy */}
+          <div ref={infoColRef} className="lg:col-span-5 space-y-6 lg:pl-6 text-left">
+            <div className="space-y-2 villa-meta-item">
               <div className="flex items-center gap-2.5">
-                <span className="text-[10px] uppercase tracking-[0.26em] text-[#dfcaa3] font-sans font-medium">
+                <span
+                  ref={subtitleRef}
+                  className="text-[10px] uppercase tracking-[0.26em] text-[#dfcaa3] font-sans font-medium"
+                >
                   {currentVilla.subtitle}
                 </span>
                 <span className="text-white/20">·</span>
                 <span className="font-mono text-[11px] text-white/50">{currentVilla.orientation}</span>
               </div>
 
-              <h3 className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-white font-light tracking-tight leading-tight">
+              <h3
+                ref={titleRef}
+                className="font-editorial text-3xl sm:text-4xl lg:text-5xl text-white font-light tracking-tight leading-tight"
+              >
                 {currentVilla.name}
               </h3>
             </div>
 
-            <p className="font-sans text-xs sm:text-sm text-white/75 leading-relaxed font-light">
+            <p
+              ref={descRef}
+              className="font-sans text-xs sm:text-sm text-white/75 leading-relaxed font-light villa-meta-item"
+            >
               {currentVilla.description}
             </p>
 
             {/* Architectural Specifications Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-5 border-y border-white/10 text-left">
+            <div
+              ref={specsRef}
+              className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-5 border-y border-white/10 text-left villa-meta-item"
+            >
               <div>
                 <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">SIZE</span>
                 <span className="font-editorial text-lg text-white mt-0.5 block">{currentVilla.size}</span>
@@ -203,7 +417,7 @@ export function StayChapter({
                 <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">BEDROOMS</span>
                 <span className="font-editorial text-lg text-white mt-0.5 block">{currentVilla.bedrooms}</span>
               </div>
-              <div>
+              <div ref={priceRef}>
                 <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">FROM</span>
                 <span className="font-mono text-sm text-[#dfcaa3] mt-1 block">
                   ${currentVilla.pricePerNight.toLocaleString()}<span className="text-[10px] text-white/40">/nt</span>
@@ -212,7 +426,7 @@ export function StayChapter({
             </div>
 
             {/* Highlights List */}
-            <div className="space-y-2">
+            <div className="space-y-2 villa-meta-item">
               <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">
                 SANCTUARY HIGHLIGHTS
               </span>
@@ -226,12 +440,12 @@ export function StayChapter({
               </ul>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+            {/* Actions (Task 13 refined button hover scale max 1.015) */}
+            <div ref={ctaContainerRef} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2 villa-meta-item">
               <button
                 onClick={() => onReserveVilla(currentVilla.id)}
                 data-cursor="RESERVE"
-                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-105 active:scale-95 text-center"
+                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.015] active:scale-95 text-center"
               >
                 REQUEST THIS VILLA
               </button>
@@ -368,7 +582,7 @@ export function StayChapter({
                   setSelectedVilla(null);
                   onReserveVilla(selectedVilla.id);
                 }}
-                className="px-6 py-3 rounded-full bg-[#dfcaa3] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_20px_rgba(223,202,163,0.2)] hover:scale-105"
+                className="px-6 py-3 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_20px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99]"
               >
                 REQUEST THIS VILLA
               </button>

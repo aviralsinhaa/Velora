@@ -22,11 +22,14 @@ import { GettingHereDestinationView } from './components/logistics/GettingHereDe
 import { PracticalInfoView } from './components/faq/PracticalInfoView';
 import { veloraResort } from './data/resortConfig';
 import { ConciergeSourceContext, TripState } from './data/resortContext';
+import { oceanAudio, IslandSoundZone } from './utils/audio';
 import { Sparkles } from 'lucide-react';
 
 // Lazy load heavy Three.js 360 Viewer so it doesn't inflate initial critical bundle
 const Resort360Viewer = lazy(() =>
-  import('./components/immersive/Resort360Viewer').then((m) => ({ default: m.Resort360Viewer }))
+  import('./components/immersive/Resort360Viewer').catch(() =>
+    import('./components/immersive/Resort360Viewer')
+  )
 );
 
 export default function App() {
@@ -233,6 +236,55 @@ export default function App() {
     isPracticalInfoOpen,
   ]);
 
+  // Task 4: Lightweight IntersectionObserver to set active ambience soundscape zone
+  // Updates zone strictly according to visible section without scroll-frame React state or re-renders
+  useEffect(() => {
+    const sectionZoneMap: Record<string, IslandSoundZone> = {
+      arrive: 'arrival',
+      island: 'ocean',
+      stay: 'stay',
+      'island-life': 'dining',
+      day: 'sunset',
+      discover: 'ocean',
+      'getting-here': 'arrival',
+      plan: 'arrival',
+    };
+
+    const sectionIds = Object.keys(sectionZoneMap);
+    const elements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => Boolean(el));
+
+    if (elements.length === 0) return;
+
+    let currentObservedZone: IslandSoundZone = 'arrival';
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter((entry) => entry.isIntersecting);
+        if (visibleEntries.length === 0) return;
+
+        visibleEntries.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const topVisible = visibleEntries[0];
+        const zone = sectionZoneMap[topVisible.target.id];
+        if (zone && zone !== currentObservedZone) {
+          currentObservedZone = zone;
+          oceanAudio.setSoundscapeZone(zone);
+        }
+      },
+      {
+        threshold: [0.15, 0.4, 0.7],
+        rootMargin: '-5% 0px -5% 0px',
+      }
+    );
+
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   // Helper to ensure clean overlay hierarchy (zero stacking collisions)
   const closeAllOverlays = () => {
     setIsMegaMenuOpen(false);
@@ -276,12 +328,20 @@ export default function App() {
     setBookingReturnOverlay(toReturn);
     setBookingVillaId(villaId);
     setBookingNotes(notes);
+    if (!villaId && !notes && toReturn?.type !== 'concierge') {
+      // Fresh generic booking: reset nights and guests to pristine defaults
+      setBookingNights(5);
+      setBookingGuests(2);
+    }
     setIsBookingOpen(true);
   };
 
   const handleCloseBooking = () => {
     setIsBookingOpen(false);
     setBookingNotes(undefined);
+    setBookingVillaId(undefined);
+    setBookingNights(5);
+    setBookingGuests(2);
     if (bookingReturnOverlay) {
       const ret = bookingReturnOverlay;
       setBookingReturnOverlay(null);
@@ -525,9 +585,6 @@ export default function App() {
 
   return (
     <main className="relative min-h-screen bg-[#04080f] text-[#ece6dc] font-sans selection:bg-[#c4a97d]/30 selection:text-[#f8f5ee] overflow-x-hidden">
-      {/* Contextual Cursor */}
-      <CustomCursor />
-
       {/* Simplified Architectural Navigation with MegaMenu trigger */}
       <Navbar
         onOpenBooking={() => handleOpenBooking()}
@@ -638,7 +695,7 @@ export default function App() {
             handleOpenConcierge({ sourceContext: { type: 'global' } })
           }
           data-cursor="CONCIERGE"
-          className="group relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06101c]/95 hover:bg-[#dfcaa3] text-[#dfcaa3] hover:text-[#04080f] border border-[#c4a97d]/40 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95"
+          className="group relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06101c]/95 hover:bg-[#dfcaa3] text-[#dfcaa3] hover:text-[#04080f] border border-[#c4a97d]/40 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
           aria-label="Open Private Concierge"
           title="Private Concierge"
         >

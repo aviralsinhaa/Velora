@@ -190,13 +190,12 @@
   }
 }
 
-/* Restrained Photographic Grading - Cohesive Resort Lighting */
+/* Restrained Photographic Grading - Fast Compositing */
 .velora-image-grade {
-  filter: contrast(1.03) brightness(0.98) saturate(0.96);
-  transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), filter 0.8s ease;
+  image-rendering: auto;
 }
 
-/* Clean Editorial Text Link */
+/* Clean Editorial Text Link (Task 13 Micro-interaction) */
 .editorial-link {
   display: inline-flex;
   align-items: center;
@@ -207,11 +206,31 @@
   letter-spacing: 0.22em;
   font-weight: 500;
   color: #ffffff;
-  transition: color 0.3s ease;
+  transition: color 300ms ease;
   position: relative;
 }
 
-.editorial-link:hover {
+.editorial-link > span:first-of-type,
+.editorial-link > span:not(.editorial-arrow) {
+  display: inline-block;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.editorial-link:hover > span:first-of-type,
+.editorial-link:hover > span:not(.editorial-arrow) {
+  transform: translate3d(3px, 0, 0);
+  color: #dfcaa3;
+}
+
+.editorial-link svg,
+.editorial-link .editorial-arrow {
+  display: inline-block;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.editorial-link:hover svg,
+.editorial-link:hover .editorial-arrow {
+  transform: translate3d(4px, 0, 0);
   color: #dfcaa3;
 }
 
@@ -220,49 +239,173 @@
   position: absolute;
   bottom: -2px;
   left: 0;
-  width: 0%;
+  width: 100%;
   height: 1px;
   background-color: #dfcaa3;
-  transition: width 0.3s ease;
+  transform: scaleX(0.35);
+  transform-origin: left;
+  opacity: 0.6;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
 }
 
 .editorial-link:hover::after {
-  width: 100%;
+  transform: scaleX(1);
+  opacity: 1;
 }
 
-/* Cinematic living image breathing movement */
-@keyframes kenBurnsCinema {
-  0% {
-    transform: scale(1) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: scale(1.04) translate3d(-0.6%, -0.4%, 0);
-  }
-  100% {
-    transform: scale(1) translate3d(0, 0, 0);
-  }
+/* Chapter Label Signature (Task 3) */
+.chapter-marker-dot {
+  display: inline-block;
+  transform: scale(0);
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.animate-ken-burns {
-  animation: kenBurnsCinema 24s cubic-bezier(0.25, 1, 0.5, 1) infinite alternate;
-  will-change: transform;
+.chapter-marker-text {
+  display: inline-block;
+  opacity: 0;
+  transform: translate3d(-6px, 0, 0);
+  transition: opacity 600ms ease-out, transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes slowAtmosphereDrift {
-  0% {
-    transform: scale(1.02) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: scale(1.06) translate3d(0.7%, 0.5%, 0);
-  }
-  100% {
-    transform: scale(1.02) translate3d(0, 0, 0);
-  }
+.chapter-marker-line {
+  display: block;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.animate-atmosphere-drift {
-  animation: slowAtmosphereDrift 28s ease-in-out infinite alternate;
-  will-change: transform;
+.is-visible .chapter-marker-dot,
+.is-revealed .chapter-marker-dot {
+  transform: scale(1);
+}
+
+.is-visible .chapter-marker-text,
+.is-revealed .chapter-marker-text {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.is-visible .chapter-marker-line,
+.is-revealed .chapter-marker-line {
+  transform: scaleX(1);
+}
+
+/* Day Editorial Rows Micro-Choreography (Task 7) */
+.day-row-img-frame {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  transition: opacity 750ms cubic-bezier(0.22, 1, 0.36, 1), transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-row-img {
+  transform: scale(1.035);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-row-time {
+  transform: translate3d(0, 105%, 0);
+  transition: transform 750ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-row-category {
+  opacity: 0;
+  letter-spacing: 0.36em;
+  transition: opacity 650ms ease-out, letter-spacing 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-row-title {
+  transform: translate3d(0, 105%, 0);
+  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1) 80ms;
+}
+
+.day-row-desc {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition: opacity 700ms ease-out 160ms, transform 700ms cubic-bezier(0.22, 1, 0.36, 1) 160ms;
+}
+
+.day-row-cta {
+  opacity: 0;
+  transition: opacity 650ms ease-out 220ms;
+}
+
+.day-editorial-row.is-visible .day-row-img-frame {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.day-editorial-row.is-visible .day-row-img {
+  transform: scale(1);
+}
+
+.day-editorial-row.is-visible .day-row-time {
+  transform: translate3d(0, 0, 0);
+}
+
+.day-editorial-row.is-visible .day-row-category {
+  opacity: 1;
+  letter-spacing: 0.28em;
+}
+
+.day-editorial-row.is-visible .day-row-title {
+  transform: translate3d(0, 0, 0);
+}
+
+.day-editorial-row.is-visible .day-row-desc {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.day-editorial-row.is-visible .day-row-cta {
+  opacity: 1;
+}
+
+/* Image-left vs Image-right row text offset (Task 7) */
+.day-text-left {
+  transform: translate3d(10px, 0, 0);
+  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-text-right {
+  transform: translate3d(-10px, 0, 0);
+  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.day-editorial-row.is-visible .day-text-left,
+.day-editorial-row.is-visible .day-text-right {
+  transform: translate3d(0, 0, 0);
+}
+
+/* Lightweight Native Viewport Reveal Primitives */
+.luxury-reveal {
+  opacity: 0;
+  transform: translate3d(0, 16px, 0);
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.luxury-reveal.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.luxury-reveal img {
+  transform: scale(1.025);
+  transition: transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.luxury-reveal.is-visible img {
+  transform: scale(1);
+}
+
+.luxury-reveal-img {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0) scale(1.025);
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 800ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.luxury-reveal-img.is-visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 /* Subtle water shimmer */

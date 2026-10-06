@@ -42,13 +42,21 @@ export function BookingModal({
   const modalContainerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(modalContainerRef, isOpen, { autoFocusFirst: true });
 
-  // Update when initial values change
+  // Task 3: Comprehensive Reset on Open to prevent stale state from previous sessions
   useEffect(() => {
-    setSelectedVillaId(initialVillaId);
-    if (initialNights) setNights(initialNights);
-    if (initialGuests) setGuestCount(initialGuests);
-    if (initialNotes) setNotes(initialNotes);
-  }, [initialVillaId, initialNights, initialGuests, initialNotes]);
+    if (isOpen) {
+      setSelectedVillaId(initialVillaId ?? undefined);
+      setNights(initialNights || 5);
+      setGuestCount(initialGuests || 2);
+      setNotes(initialNotes || '');
+      const dynamicFuture = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+      setCheckInDate(dynamicFuture);
+      setGuestName('');
+      setGuestEmail('');
+      setVillaError(null);
+      setIsSubmitted(false);
+    }
+  }, [isOpen, initialVillaId, initialNights, initialGuests, initialNotes]);
 
   const lastActiveElementRef = useRef<HTMLElement | null>(null);
 

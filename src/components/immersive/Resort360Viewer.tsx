@@ -358,3 +358,5 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
     </div>
   );
 }
+
+export default Resort360Viewer;

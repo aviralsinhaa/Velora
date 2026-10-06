@@ -32,6 +32,7 @@ class IslandSoundscapeMixer {
   private detailBus: GainNode | null = null;
 
   // Ocean Nodes
+  private cachedNoiseBuffer: AudioBuffer | null = null;
   private noiseSource: AudioBufferSourceNode | null = null;
   private noiseFilter: BiquadFilterNode | null = null;
   private waveLfo: OscillatorNode | null = null;
@@ -127,36 +128,40 @@ class IslandSoundscapeMixer {
       this.detailBus.gain.setValueAtTime(0.3, now);
       this.detailBus.connect(this.duckGain);
 
-      // 2. High-Fidelity 12-second Pink Noise Wash
-      const bufferLength = this.ctx.sampleRate * 12;
-      const noiseBuffer = this.ctx.createBuffer(2, bufferLength, this.ctx.sampleRate);
-      const left = noiseBuffer.getChannelData(0);
-      const right = noiseBuffer.getChannelData(1);
+      // 2. High-Fidelity Pink Noise Wash (Cached 3-second seamless loop)
+      let noiseBuffer = this.cachedNoiseBuffer;
+      if (!noiseBuffer || noiseBuffer.sampleRate !== this.ctx.sampleRate) {
+        const bufferLength = Math.min(this.ctx.sampleRate * 3, 144000);
+        noiseBuffer = this.ctx.createBuffer(2, bufferLength, this.ctx.sampleRate);
+        const left = noiseBuffer.getChannelData(0);
+        const right = noiseBuffer.getChannelData(1);
 
-      let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-      let rb0 = 0, rb1 = 0, rb2 = 0, rb3 = 0, rb4 = 0, rb5 = 0, rb6 = 0;
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        let rb0 = 0, rb1 = 0, rb2 = 0, rb3 = 0, rb4 = 0, rb5 = 0, rb6 = 0;
 
-      for (let i = 0; i < bufferLength; i++) {
-        const whiteL = Math.random() * 2 - 1;
-        const whiteR = Math.random() * 2 - 1;
+        for (let i = 0; i < bufferLength; i++) {
+          const whiteL = Math.random() * 2 - 1;
+          const whiteR = Math.random() * 2 - 1;
 
-        b0 = 0.99886 * b0 + whiteL * 0.0555179;
-        b1 = 0.99332 * b1 + whiteL * 0.0750759;
-        b2 = 0.96900 * b2 + whiteL * 0.1538520;
-        b3 = 0.86650 * b3 + whiteL * 0.3104856;
-        b4 = 0.55000 * b4 + whiteL * 0.5329522;
-        b5 = -0.7616 * b5 - whiteL * 0.0168980;
-        left[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + whiteL * 0.5362) * 0.045;
-        b6 = whiteL * 0.115926;
+          b0 = 0.99886 * b0 + whiteL * 0.0555179;
+          b1 = 0.99332 * b1 + whiteL * 0.0750759;
+          b2 = 0.96900 * b2 + whiteL * 0.1538520;
+          b3 = 0.86650 * b3 + whiteL * 0.3104856;
+          b4 = 0.55000 * b4 + whiteL * 0.5329522;
+          b5 = -0.7616 * b5 - whiteL * 0.0168980;
+          left[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + whiteL * 0.5362) * 0.045;
+          b6 = whiteL * 0.115926;
 
-        rb0 = 0.99886 * rb0 + whiteR * 0.0555179;
-        rb1 = 0.99332 * rb1 + whiteR * 0.0750759;
-        rb2 = 0.96900 * rb2 + whiteR * 0.1538520;
-        rb3 = 0.86650 * rb3 + whiteR * 0.3104856;
-        rb4 = 0.55000 * rb4 + whiteR * 0.5329522;
-        rb5 = -0.7616 * rb5 - whiteR * 0.0168980;
-        right[i] = (rb0 + rb1 + rb2 + rb3 + rb4 + rb5 + rb6 + whiteR * 0.5362) * 0.045;
-        rb6 = whiteR * 0.115926;
+          rb0 = 0.99886 * rb0 + whiteR * 0.0555179;
+          rb1 = 0.99332 * rb1 + whiteR * 0.0750759;
+          rb2 = 0.96900 * rb2 + whiteR * 0.1538520;
+          rb3 = 0.86650 * rb3 + whiteR * 0.3104856;
+          rb4 = 0.55000 * rb4 + whiteR * 0.5329522;
+          rb5 = -0.7616 * rb5 - whiteR * 0.0168980;
+          right[i] = (rb0 + rb1 + rb2 + rb3 + rb4 + rb5 + rb6 + whiteR * 0.5362) * 0.045;
+          rb6 = whiteR * 0.115926;
+        }
+        this.cachedNoiseBuffer = noiseBuffer;
       }
 
       this.noiseSource = this.ctx.createBufferSource();

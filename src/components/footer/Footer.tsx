@@ -60,7 +60,7 @@ export function Footer({
               <button
                 onClick={onOpenBooking}
                 data-cursor="REQUEST"
-                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-105 active:scale-95 text-center"
+                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99] text-center"
               >
                 REQUEST YOUR STAY
               </button>
