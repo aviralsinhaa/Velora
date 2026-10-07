@@ -120,7 +120,6 @@
 .reveal-child {
   transform: translateY(115%);
   transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.9s ease-out;
-  will-change: transform, opacity;
 }
 
 .reveal-child.is-revealed {

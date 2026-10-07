@@ -4,6 +4,7 @@ import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ConciergeSourceContext } from '../../data/resortContext';
 import { ArrowLeft, Clock, Sparkles, X, Heart } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface WellnessDestinationViewProps {
   onClose: () => void;
@@ -78,7 +79,7 @@ export function WellnessDestinationView({
             }
             data-cursor="CONCIERGE"
             data-focus-id="wellness-concierge"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -87,7 +88,7 @@ export function WellnessDestinationView({
           <button
             onClick={() => onRequestStay('Interested in wellness retreats & acoustic meditation')}
             data-focus-id="wellness-request"
-            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-all"
+            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-colors"
           >
             REQUEST YOUR STAY
           </button>
@@ -156,10 +157,11 @@ export function WellnessDestinationView({
 
           <div className="lg:col-span-7">
             <div className="rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] sm:aspect-[4/3] w-full shadow-2xl">
-              <img
+              <ResponsiveImage
                 src={RESORT_MEDIA.wellness.waterPavilion}
                 alt="The Water Pavilion at Velora"
-                loading="lazy"
+                priority={true}
+                sizes="(max-width: 1024px) 100vw, 60vw"
                 className="w-full h-full object-cover velora-image-grade"
               />
             </div>

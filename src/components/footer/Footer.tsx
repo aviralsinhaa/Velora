@@ -60,7 +60,7 @@ export function Footer({
               <button
                 onClick={onOpenBooking}
                 data-cursor="REQUEST"
-                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99] text-center"
+                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99] text-center"
               >
                 REQUEST YOUR STAY
               </button>
@@ -68,7 +68,7 @@ export function Footer({
               <button
                 onClick={onOpenConcierge}
                 data-cursor="CONCIERGE"
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-colors duration-300"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#dfcaa3]" />
                 <span>PRIVATE CONCIERGE ✦</span>

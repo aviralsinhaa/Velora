@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Villa } from '../../types';
 import { ArrowLeft, Compass, Check, Sparkles, X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface VillaDetailViewProps {
   villa: Villa;
@@ -101,7 +102,7 @@ export function VillaDetailView({
             onClick={() => onAskConcierge(`Tell me more about the ${villa.name}. Is it right for us?`, villa.id, 'villa-detail-concierge-header')}
             data-cursor="CONCIERGE"
             data-focus-id="villa-detail-concierge-header"
-            className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -111,7 +112,7 @@ export function VillaDetailView({
             onClick={() => onRequestStay(villa.id, 'villa-detail-request-header')}
             data-cursor="REQUEST"
             data-focus-id="villa-detail-request-header"
-            className="px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.2em] font-sans font-medium transition-all shadow-md hover:scale-105 active:scale-95 whitespace-nowrap"
+            className="px-3.5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[10px] sm:text-[11px] uppercase tracking-[0.16em] sm:tracking-[0.2em] font-sans font-medium transition-[background-color,color,transform,box-shadow] duration-200 shadow-md hover:scale-105 active:scale-95 whitespace-nowrap"
           >
             REQUEST THIS VILLA
           </button>
@@ -153,9 +154,11 @@ export function VillaDetailView({
 
           {/* Primary Featured Image with 360 link */}
           <div className="relative rounded-2xl overflow-hidden border border-white/10 aspect-[16/10] sm:aspect-[21/9] w-full shadow-2xl bg-[#06101c]">
-            <img
+            <ResponsiveImage
               src={villa.featuredImage}
               alt={villa.name}
+              priority={true}
+              sizes="(max-width: 1024px) 100vw, 1200px"
               className="w-full h-full object-cover velora-image-grade"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 pointer-events-none" />
@@ -170,7 +173,7 @@ export function VillaDetailView({
                   onClick={() => onOpen360(villa.panoramaSceneId!, 'villa-detail-360')}
                   data-cursor="360°"
                   data-focus-id="villa-detail-360"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/70 hover:bg-black/95 border border-white/20 text-white text-xs uppercase tracking-[0.2em] font-sans backdrop-blur-md transition-all hover:scale-105"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/70 hover:bg-black/95 border border-white/20 text-white text-xs uppercase tracking-[0.2em] font-sans backdrop-blur-md transition-[background-color,transform] hover:scale-105"
                 >
                   <Compass className="w-4 h-4 text-[#dfcaa3]" />
                   <span>360° Tour</span>
@@ -279,7 +282,7 @@ export function VillaDetailView({
                   onClick={() => onRequestStay(villa.id, 'villa-detail-request-primary')}
                   data-cursor="REQUEST"
                   data-focus-id="villa-detail-request-primary"
-                  className="w-full py-4 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.24em] font-medium transition-all shadow-lg hover:scale-[1.02] active:scale-95 text-center block"
+                  className="w-full py-4 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.24em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-lg hover:scale-[1.015] active:scale-95 text-center block"
                 >
                   REQUEST THIS VILLA
                 </button>
@@ -287,7 +290,7 @@ export function VillaDetailView({
                 <button
                   onClick={() => onAskConcierge(`Plan five nights for two in the ${villa.name}`, villa.id, 'villa-detail-concierge-plan')}
                   data-focus-id="villa-detail-concierge-plan"
-                  className="w-full py-3.5 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 font-sans text-xs uppercase tracking-[0.2em] transition-all text-center block"
+                  className="w-full py-3.5 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 font-sans text-xs uppercase tracking-[0.2em] transition-[border-color,background-color,color] duration-300 text-center block"
                 >
                   Plan Stay with Concierge ✦
                 </button>
@@ -318,11 +321,12 @@ export function VillaDetailView({
                 key={i}
                 className="rounded-xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] shadow-xl group"
               >
-                <img
+                <ResponsiveImage
                   src={img}
                   alt={`${villa.name} view ${i + 1}`}
-                  className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-700"
                   loading="lazy"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-700"
                 />
               </div>
             ))}
@@ -364,14 +368,15 @@ export function VillaDetailView({
                     }
                   }}
                   aria-label={`View details for ${other.name}`}
-                  className="p-5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 cursor-pointer transition-all space-y-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3]"
+                  className="p-5 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 cursor-pointer transition-colors space-y-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dfcaa3]"
                 >
                   <div className="aspect-[16/10] rounded-lg overflow-hidden border border-white/10 bg-[#06101c]">
-                    <img
+                    <ResponsiveImage
                       src={other.featuredImage}
                       alt={other.name}
-                      className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div>

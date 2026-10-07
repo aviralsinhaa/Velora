@@ -159,7 +159,7 @@ export function BookingModal({
 
             <button
               onClick={handleReset}
-              className="p-2.5 rounded-full border border-white/15 hover:border-white text-white/60 hover:text-white transition-all focus:outline-none"
+              className="p-2.5 rounded-full border border-white/15 hover:border-white text-white/60 hover:text-white transition-colors focus:outline-none"
               aria-label="Close stay request drawer"
             >
               <X className="w-5 h-5" />
@@ -209,13 +209,13 @@ export function BookingModal({
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <button
                   onClick={handleReset}
-                  className="flex-1 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all text-center"
+                  className="flex-1 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-colors text-center"
                 >
                   RETURN TO VELORA
                 </button>
                 <button
                   onClick={handleReset}
-                  className="flex-1 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all text-center"
+                  className="flex-1 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-colors text-center"
                 >
                   CONTINUE EXPLORING
                 </button>
@@ -242,7 +242,7 @@ export function BookingModal({
                       onClick={() => setSelectedVillaId(v.id)}
                       aria-label={`Select ${v.name}, $${v.pricePerNight.toLocaleString()} per night`}
                       aria-pressed={selectedVillaId === v.id}
-                      className={`p-3.5 rounded-xl border text-left transition-all ${
+                      className={`p-3.5 rounded-xl border text-left transition-colors ${
                         selectedVillaId === v.id
                           ? 'border-[#dfcaa3] bg-[#dfcaa3]/10 text-white'
                           : 'border-white/10 bg-[#06101c] text-white/70 hover:border-white/25'
@@ -287,7 +287,7 @@ export function BookingModal({
                         onClick={() => setNights(n)}
                         aria-label={`${n} nights duration`}
                         aria-pressed={nights === n}
-                        className={`flex-1 py-3 rounded-xl border text-xs font-mono transition-all ${
+                        className={`flex-1 py-3 rounded-xl border text-xs font-mono transition-colors ${
                           nights === n
                             ? 'border-[#dfcaa3] bg-[#dfcaa3] text-[#04080f] font-medium'
                             : 'border-white/15 bg-[#06101c] text-white/70 hover:border-white/30'
@@ -313,7 +313,7 @@ export function BookingModal({
                       onClick={() => setGuestCount(g)}
                       aria-label={g === 1 ? 'Solo guest' : g === 2 ? 'Couple (2 guests)' : `${g} guests`}
                       aria-pressed={guestCount === g}
-                      className={`flex-1 py-2.5 rounded-xl border text-xs font-sans transition-all ${
+                      className={`flex-1 py-2.5 rounded-xl border text-xs font-sans transition-colors ${
                         guestCount === g
                           ? 'border-[#dfcaa3] bg-[#dfcaa3] text-[#04080f] font-medium'
                           : 'border-white/15 bg-[#06101c] text-white/70 hover:border-white/30'
@@ -339,7 +339,7 @@ export function BookingModal({
                     onChange={(e) => setGuestName(e.target.value)}
                     required
                     aria-label="Full Name"
-                    className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30"
+                    className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/45"
                   />
                   <input
                     id="booking-guest-email"
@@ -349,7 +349,7 @@ export function BookingModal({
                     onChange={(e) => setGuestEmail(e.target.value)}
                     required
                     aria-label="Email Address"
-                    className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30"
+                    className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/45"
                   />
                 </div>
                 <textarea
@@ -359,7 +359,7 @@ export function BookingModal({
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
                   aria-label="Special requests, dietary preferences, or arrival notes"
-                  className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/30 resize-none font-light"
+                  className="w-full bg-[#06101c] border border-white/15 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#dfcaa3] placeholder:text-white/45 resize-none font-light"
                 />
               </div>
 
@@ -414,7 +414,7 @@ export function BookingModal({
               {/* Submit CTA */}
               <button
                 type="submit"
-                className="w-full py-4 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.25)] flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-[0_0_24px_rgba(223,202,163,0.25)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
               >
                 <span>{selectedVillaId ? 'REQUEST THIS VILLA' : 'REQUEST YOUR STAY'}</span>
                 <ArrowRight className="w-3.5 h-3.5" />

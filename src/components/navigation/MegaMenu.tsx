@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { X, ArrowRight, Sparkles } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface MegaMenuProps {
   isOpen: boolean;
@@ -359,7 +360,7 @@ export function MegaMenu({
                   onClose();
                   onOpenConcierge();
                 }}
-                className="px-6 py-3.5 rounded-full border border-[#c4a97d]/50 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-xs uppercase tracking-[0.22em] font-sans flex items-center justify-center gap-2 transition-all"
+                className="px-6 py-3.5 rounded-full border border-[#c4a97d]/50 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-xs uppercase tracking-[0.22em] font-sans flex items-center justify-center gap-2 transition-[border-color,background-color,color] duration-300"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Open Private Concierge ✦</span>
@@ -370,7 +371,7 @@ export function MegaMenu({
                   onClose();
                   onOpenBooking();
                 }}
-                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-xs uppercase tracking-[0.22em] font-sans font-medium transition-all shadow-md text-center"
+                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-xs uppercase tracking-[0.22em] font-sans font-medium transition-[background-color,color,box-shadow] duration-300 shadow-md text-center"
               >
                 Request Your Stay
               </button>
@@ -381,10 +382,12 @@ export function MegaMenu({
           <div className="lg:col-span-5 hidden lg:block">
             <div className="rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[4/3] shadow-2xl space-y-3 p-3">
               <div className="w-full h-[75%] rounded-xl overflow-hidden">
-                <img
+                <ResponsiveImage
                   src={categoryPreviews[activeCategory].image}
                   alt={categoryPreviews[activeCategory].title}
-                  className="w-full h-full object-cover velora-image-grade transition-all duration-700"
+                  sizes="(max-width: 1024px) 0px, 450px"
+                  className="w-full h-full object-cover velora-image-grade transition-[transform,opacity] duration-700"
+                  loading="lazy"
                 />
               </div>
               <div className="text-left px-2 pt-1">

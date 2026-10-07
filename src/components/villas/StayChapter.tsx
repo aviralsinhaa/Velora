@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { veloraResort } from '../../data/resortConfig';
 import { Villa } from '../../types';
 import { oceanAudio } from '../../utils/audio';
@@ -27,6 +27,8 @@ export function StayChapter({
   const [selectedVilla, setSelectedVilla] = useState<Villa | null>(null);
   const touchStartX = useRef<number | null>(null);
   const prevIndexRef = useRef<number>(0);
+  const isFirstMountRef = useRef<boolean>(true);
+  const transitionIdRef = useRef<number>(0);
 
   const sectionRef = useRef<HTMLElement>(null);
   const chapterDotRef = useRef<HTMLSpanElement>(null);
@@ -119,72 +121,103 @@ export function StayChapter({
     }
   });
 
-  // 2. Cinematic Villa Change: True Two-Layer Overlapping Crossfade (Task 1)
-  useEffect(() => {
-    if (prevIndexRef.current !== currentIndex) {
-      setOutgoingVilla(villas[prevIndexRef.current]);
-      prevIndexRef.current = currentIndex;
+  // 2. Cinematic Villa Change: Trigger state for outgoing and incoming layers synchronously
+  if (prevIndexRef.current !== currentIndex) {
+    setOutgoingVilla(villas[prevIndexRef.current]);
+    prevIndexRef.current = currentIndex;
+  }
 
-      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-      if (!mediaQuery.matches) {
-        // Outgoing layer: starts at opacity 1, fades 1 -> 0, scales 1 -> 1.01
-        if (outgoingImgRef.current) {
-          gsap.fromTo(
-            outgoingImgRef.current,
-            { opacity: 1, scale: 1.0 },
-            { opacity: 0, scale: 1.01, duration: 0.65, ease: 'power2.inOut' }
-          );
-        }
+  // Execute GSAP Crossfade once outgoing layer is genuinely mounted in DOM
+  useLayoutEffect(() => {
+    if (!outgoingVilla) return;
 
-        // Active new image: starts at opacity 0, fades 0 -> 1, scales 1.02 -> 1
-        if (activeImgRef.current) {
-          gsap.fromTo(
-            activeImgRef.current,
-            { opacity: 0, scale: 1.02 },
-            { opacity: 1, scale: 1.0, duration: 0.7, ease: 'power2.out' }
-          );
-        }
+    const currentId = ++transitionIdRef.current;
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-        // Villa title: clean editorial exit & entrance
-        if (titleRef.current) {
-          gsap.fromTo(
-            titleRef.current,
-            { y: 12, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }
-          );
-        }
-        if (subtitleRef.current) {
-          gsap.fromTo(
-            subtitleRef.current,
-            { opacity: 0, x: -6 },
-            { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
-          );
-        }
-        if (descRef.current) {
-          gsap.fromTo(
-            descRef.current,
-            { opacity: 0, y: 8 },
-            { opacity: 1, y: 0, duration: 0.55, delay: 0.05, ease: 'power2.out' }
-          );
-        }
-
-        // Metadata: stagger specs once (price is child 4 of specs, no duplicate animation!)
-        if (specsRef.current) {
-          gsap.fromTo(
-            specsRef.current.children,
-            { opacity: 0, y: 6 },
-            { opacity: 1, y: 0, stagger: 0.04, duration: 0.45, delay: 0.08, ease: 'power2.out' }
-          );
-        }
-      }
-
-      const timer = setTimeout(() => {
-        setOutgoingVilla(null);
-      }, 700);
-
-      return () => clearTimeout(timer);
+    if (mediaQuery.matches) {
+      setOutgoingVilla(null);
+      return;
     }
-  }, [currentIndex, villas]);
+
+    const outEl = outgoingImgRef.current;
+    const activeEl = activeImgRef.current;
+
+    if (outEl && activeEl) {
+      gsap.killTweensOf([outEl, activeEl]);
+
+      // Explicit initial states: outgoing at 1, incoming at 0 & slightly scaled
+      gsap.set(outEl, { opacity: 1, scale: 1.0, transformOrigin: 'center center' });
+      gsap.set(activeEl, { opacity: 0, scale: 1.02, transformOrigin: 'center center' });
+
+      // Outgoing: opacity 1 -> 0, scale 1 -> 1.01 over 680ms with power2.inOut
+      gsap.to(outEl, {
+        opacity: 0,
+        scale: 1.01,
+        duration: 0.68,
+        ease: 'power2.inOut',
+        onComplete: () => {
+          if (transitionIdRef.current === currentId) {
+            setOutgoingVilla(null);
+          }
+        },
+      });
+
+      // Incoming: opacity 0 -> 1, scale 1.02 -> 1 over 700ms with power2.out
+      gsap.to(activeEl, {
+        opacity: 1,
+        scale: 1.0,
+        duration: 0.7,
+        ease: 'power2.out',
+      });
+    } else {
+      setOutgoingVilla(null);
+    }
+
+    return () => {
+      if (outEl) gsap.killTweensOf(outEl);
+      if (activeEl) gsap.killTweensOf(activeEl);
+    };
+  }, [outgoingVilla, currentIndex]);
+
+  // Choreographed Editorial Typography Transition on Villa Switch
+  useEffect(() => {
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false;
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mediaQuery.matches) return;
+
+    if (titleRef.current) {
+      gsap.fromTo(
+        titleRef.current,
+        { y: 12, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' }
+      );
+    }
+    if (subtitleRef.current) {
+      gsap.fromTo(
+        subtitleRef.current,
+        { opacity: 0, x: -6 },
+        { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' }
+      );
+    }
+    if (descRef.current) {
+      gsap.fromTo(
+        descRef.current,
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.55, delay: 0.05, ease: 'power2.out' }
+      );
+    }
+    if (specsRef.current) {
+      gsap.fromTo(
+        specsRef.current.children,
+        { opacity: 0, y: 6 },
+        { opacity: 1, y: 0, stagger: 0.04, duration: 0.45, delay: 0.08, ease: 'power2.out' }
+      );
+    }
+  }, [currentIndex]);
 
   const nextVilla = useCallback(() => {
     setCurrentIndex((prev) => (prev + 1) % villas.length);
@@ -256,7 +289,7 @@ export function StayChapter({
                 <button
                   onClick={onOpenCompareVillas}
                   data-cursor="COMPARE"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-[#dfcaa3] hover:text-white text-[11px] uppercase tracking-[0.18em] font-sans transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 hover:border-[#dfcaa3] text-[#dfcaa3] hover:text-white text-[11px] uppercase tracking-[0.18em] font-sans transition-colors"
                 >
                   <span>Compare Villas →</span>
                 </button>
@@ -406,28 +439,28 @@ export function StayChapter({
               className="grid grid-cols-2 sm:grid-cols-4 gap-4 py-5 border-y border-white/10 text-left villa-meta-item"
             >
               <div>
-                <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">SIZE</span>
+                <span className="text-[9px] uppercase tracking-[0.24em] text-white/55 font-sans block">SIZE</span>
                 <span className="font-editorial text-lg text-white mt-0.5 block">{currentVilla.size}</span>
               </div>
               <div>
-                <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">GUESTS</span>
+                <span className="text-[9px] uppercase tracking-[0.24em] text-white/55 font-sans block">GUESTS</span>
                 <span className="font-editorial text-lg text-white mt-0.5 block">{currentVilla.guests}</span>
               </div>
               <div>
-                <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">BEDROOMS</span>
+                <span className="text-[9px] uppercase tracking-[0.24em] text-white/55 font-sans block">BEDROOMS</span>
                 <span className="font-editorial text-lg text-white mt-0.5 block">{currentVilla.bedrooms}</span>
               </div>
               <div ref={priceRef}>
-                <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">FROM</span>
+                <span className="text-[9px] uppercase tracking-[0.24em] text-white/55 font-sans block">FROM</span>
                 <span className="font-mono text-sm text-[#dfcaa3] mt-1 block">
-                  ${currentVilla.pricePerNight.toLocaleString()}<span className="text-[10px] text-white/40">/nt</span>
+                  ${currentVilla.pricePerNight.toLocaleString()}<span className="text-[10px] text-white/50">/nt</span>
                 </span>
               </div>
             </div>
 
             {/* Highlights List */}
             <div className="space-y-2 villa-meta-item">
-              <span className="text-[9px] uppercase tracking-[0.24em] text-white/40 font-sans block">
+              <span className="text-[9px] uppercase tracking-[0.24em] text-white/55 font-sans block">
                 SANCTUARY HIGHLIGHTS
               </span>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-sans text-white/70 font-light">
@@ -445,7 +478,7 @@ export function StayChapter({
               <button
                 onClick={() => onReserveVilla(currentVilla.id)}
                 data-cursor="RESERVE"
-                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.015] active:scale-95 text-center"
+                className="px-8 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-[0_0_24px_rgba(223,202,163,0.2)] hover:scale-[1.015] active:scale-95 text-center"
               >
                 REQUEST THIS VILLA
               </button>
@@ -459,7 +492,7 @@ export function StayChapter({
                     )
                   }
                   data-cursor="CONCIERGE"
-                  className="px-6 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] bg-white/[0.03] hover:bg-[#dfcaa3]/10 text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all text-center"
+                  className="px-6 py-3.5 rounded-full border border-white/20 hover:border-[#dfcaa3] bg-white/[0.03] hover:bg-[#dfcaa3]/10 text-white hover:text-[#dfcaa3] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-[border-color,background-color,color] duration-300 text-center"
                 >
                   CONCIERGE ✦
                 </button>
@@ -505,10 +538,11 @@ export function StayChapter({
             </div>
 
             <div className="aspect-[16/9] rounded-xl overflow-hidden border border-white/10">
-              <img
+              <ResponsiveImage
                 src={selectedVilla.featuredImage}
                 alt={selectedVilla.name}
                 loading="lazy"
+                sizes="(max-width: 640px) 100vw, 672px"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -582,7 +616,7 @@ export function StayChapter({
                   setSelectedVilla(null);
                   onReserveVilla(selectedVilla.id);
                 }}
-                className="px-6 py-3 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_20px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99]"
+                className="px-6 py-3 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-[0_0_20px_rgba(223,202,163,0.2)] hover:scale-[1.01] active:scale-[0.99]"
               >
                 REQUEST THIS VILLA
               </button>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import gsap from 'gsap';
 
 export function CustomCursor() {
   const [cursorText, setCursorText] = useState<string>('');
@@ -9,11 +10,6 @@ export function CustomCursor() {
 
   const followerRef = useRef<HTMLDivElement>(null);
   const dotRef = useRef<HTMLDivElement>(null);
-  const targetXRef = useRef<number>(-100);
-  const targetYRef = useRef<number>(-100);
-  const currentXRef = useRef<number>(-100);
-  const currentYRef = useRef<number>(-100);
-  const rafRef = useRef<number | null>(null);
 
   // Cached state references to avoid duplicate low-frequency React state updates
   const lastTextRef = useRef<string>('');
@@ -30,36 +26,44 @@ export function CustomCursor() {
     setIsTouch(false);
     document.body.classList.add('has-custom-cursor');
 
-    // 1. One persistent RAF loop writing directly to DOM transforms (zero React re-renders)
-    const updateCursorPosition = () => {
-      const tx = targetXRef.current;
-      const ty = targetYRef.current;
-      currentXRef.current += (tx - currentXRef.current) * 0.24;
-      currentYRef.current += (ty - currentYRef.current) * 0.24;
+    // Setup GSAP quick setters/interpolators (ZERO permanent RAF work when idle)
+    let xFollower: ((value: number) => void) | null = null;
+    let yFollower: ((value: number) => void) | null = null;
+    let xDot: ((value: number) => void) | null = null;
+    let yDot: ((value: number) => void) | null = null;
 
-      const cx = currentXRef.current;
-      const cy = currentYRef.current;
+    if (followerRef.current) {
+      gsap.set(followerRef.current, { xPercent: -50, yPercent: -50, x: -100, y: -100 });
+      xFollower = gsap.quickTo(followerRef.current, 'x', { duration: 0.28, ease: 'power2.out' });
+      yFollower = gsap.quickTo(followerRef.current, 'y', { duration: 0.28, ease: 'power2.out' });
+    }
 
-      if (followerRef.current) {
-        followerRef.current.style.transform = `translate3d(${cx}px, ${cy}px, 0) translate(-50%, -50%)`;
-      }
-      if (dotRef.current) {
-        dotRef.current.style.transform = `translate3d(${tx}px, ${ty}px, 0) translate(-50%, -50%)`;
-      }
+    if (dotRef.current) {
+      gsap.set(dotRef.current, { xPercent: -50, yPercent: -50, x: -100, y: -100 });
+      xDot = gsap.quickSetter(dotRef.current, 'x', 'px') as (value: number) => void;
+      yDot = gsap.quickSetter(dotRef.current, 'y', 'px') as (value: number) => void;
+    }
 
-      rafRef.current = requestAnimationFrame(updateCursorPosition);
-    };
-
-    rafRef.current = requestAnimationFrame(updateCursorPosition);
-
-    // 2. High-performance pointer move: updates coordinate refs with zero setState for x/y
+    // High-performance pointer move: updates coordinate positions directly via GSAP
     const handlePointerMove = (e: PointerEvent) => {
-      targetXRef.current = e.clientX;
-      targetYRef.current = e.clientY;
-
       if (!isVisibleRef.current) {
         isVisibleRef.current = true;
         setIsVisible(true);
+        if (followerRef.current) {
+          gsap.set(followerRef.current, { x: e.clientX, y: e.clientY });
+        }
+        if (dotRef.current) {
+          gsap.set(dotRef.current, { x: e.clientX, y: e.clientY });
+        }
+      }
+
+      if (xFollower && yFollower) {
+        xFollower(e.clientX);
+        yFollower(e.clientY);
+      }
+      if (xDot && yDot) {
+        xDot(e.clientX);
+        yDot(e.clientY);
       }
 
       const targetEl = e.target as HTMLElement | null;
@@ -111,9 +115,15 @@ export function CustomCursor() {
       isVisibleRef.current = false;
       setIsVisible(false);
     };
-    const handlePointerEnter = () => {
+    const handlePointerEnter = (e: PointerEvent) => {
       isVisibleRef.current = true;
       setIsVisible(true);
+      if (followerRef.current) {
+        gsap.set(followerRef.current, { x: e.clientX, y: e.clientY });
+      }
+      if (dotRef.current) {
+        gsap.set(dotRef.current, { x: e.clientX, y: e.clientY });
+      }
     };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
@@ -123,9 +133,6 @@ export function CustomCursor() {
     document.addEventListener('pointerenter', handlePointerEnter);
 
     return () => {
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-      }
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
@@ -151,9 +158,6 @@ export function CustomCursor() {
             ? 'w-5 h-5 bg-transparent border border-[#dfcaa3]'
             : 'w-7 h-7 bg-transparent border border-white/25'
         }`}
-        style={{
-          transform: `translate3d(${currentXRef.current}px, ${currentYRef.current}px, 0) translate(-50%, -50%)`,
-        }}
       >
         {cursorText && (
           <span className="text-[8.5px] font-sans tracking-[0.2em] uppercase font-semibold text-[#dfcaa3] select-none text-center px-1">
@@ -168,7 +172,6 @@ export function CustomCursor() {
           ref={dotRef}
           className="fixed top-0 left-0 w-1.5 h-1.5 bg-[#dfcaa3] rounded-full transition-opacity duration-150 will-change-transform"
           style={{
-            transform: `translate3d(${targetXRef.current}px, ${targetYRef.current}px, 0) translate(-50%, -50%)`,
             opacity: isHovered ? 0.3 : 0.9,
           }}
         />

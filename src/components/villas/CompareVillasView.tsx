@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Villa } from '../../types';
 import { ArrowLeft, Check, Sparkles, X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface CompareVillasViewProps {
   villas: Villa[];
@@ -67,7 +68,7 @@ export function CompareVillasView({
             onClick={() => onAskConcierge('Which villa is best for our stay?')}
             data-cursor="CONCIERGE"
             data-focus-id="compare-concierge"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -110,10 +111,11 @@ export function CompareVillasView({
                 {/* Header Card Info */}
                 <div className="space-y-4">
                   <div className="relative aspect-[16/10] rounded-xl overflow-hidden border border-white/10 bg-[#04080f]">
-                    <img
+                    <ResponsiveImage
                       src={v.featuredImage}
                       alt={v.name}
                       loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                       className="w-full h-full object-cover velora-image-grade"
                     />
                   </div>
@@ -135,7 +137,7 @@ export function CompareVillasView({
                     <button
                       onClick={() => onRequestStay(v.id)}
                       data-focus-id={`compare-request-${v.id}`}
-                      className="w-full py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-xs uppercase tracking-[0.2em] font-sans font-medium transition-all text-center block"
+                      className="w-full py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-xs uppercase tracking-[0.2em] font-sans font-medium transition-colors text-center block"
                     >
                       REQUEST THIS VILLA
                     </button>

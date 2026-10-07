@@ -4,6 +4,7 @@ import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ConciergeSourceContext } from '../../data/resortContext';
 import { ArrowLeft, Clock, MapPin, Utensils, Sparkles, X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface DiningDestinationViewProps {
   onClose: () => void;
@@ -72,7 +73,7 @@ export function DiningDestinationView({
             }
             data-cursor="CONCIERGE"
             data-focus-id="dining-concierge"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -81,7 +82,7 @@ export function DiningDestinationView({
           <button
             onClick={() => onRequestStay('Interested in dining arrangements at Velora')}
             data-focus-id="dining-request"
-            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-all"
+            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-colors"
           >
             REQUEST YOUR STAY
           </button>
@@ -114,10 +115,11 @@ export function DiningDestinationView({
           </div>
 
           <div className="rounded-2xl overflow-hidden border border-white/10 aspect-[16/10] sm:aspect-[21/9] w-full shadow-2xl bg-[#06101c]">
-            <img
+            <ResponsiveImage
               src={RESORT_MEDIA.dining.aura.hero}
               alt="Dining pavilion over turquoise lagoon"
-              loading="lazy"
+              priority={true}
+              sizes="(max-width: 1024px) 100vw, 1200px"
               className="w-full h-full object-cover velora-image-grade"
             />
           </div>
@@ -135,11 +137,12 @@ export function DiningDestinationView({
               {/* Media Column (7 Cols) */}
               <div className={`lg:col-span-7 ${idx % 2 === 1 ? 'lg:order-2' : ''}`}>
                 <div className="rounded-2xl overflow-hidden border border-white/10 bg-[#06101c] aspect-[16/10] shadow-2xl group">
-                  <img
+                  <ResponsiveImage
                     src={venue.image}
                     alt={venue.name}
-                    className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-700"
                     loading="lazy"
+                    sizes="(max-width: 1024px) 100vw, 60vw"
+                    className="w-full h-full object-cover velora-image-grade group-hover:scale-105 transition-transform duration-700"
                   />
                 </div>
               </div>

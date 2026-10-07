@@ -20,7 +20,7 @@ export function AmbienceControl() {
     <button
       onClick={toggleAmbience}
       data-cursor={isPlaying ? 'MUTE' : 'LISTEN'}
-      className="group inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-white/15 hover:border-[#c4a97d]/60 bg-black/35 hover:bg-black/55 backdrop-blur-md transition-all duration-300 focus:outline-none focus:ring-1 focus:ring-[#dfcaa3]/50"
+      className="group inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-white/15 hover:border-[#c4a97d]/60 bg-black/35 hover:bg-black/55 backdrop-blur-md transition-[border-color,background-color] duration-300 focus:outline-none focus:ring-1 focus:ring-[#dfcaa3]/50"
       title={isPlaying ? 'Mute Atoll tides' : 'Immerse in procedural ocean wave ambience'}
       aria-label={isPlaying ? 'Mute ocean soundscape' : 'Enable procedural ocean soundscape'}
     >
@@ -39,7 +39,7 @@ export function AmbienceControl() {
       <span className="text-[10px] tracking-[0.22em] uppercase font-sans text-white/70 group-hover:text-white transition-colors flex items-center gap-1.5">
         <span>TIDES</span>
         <span
-          className={`inline-block w-1.5 h-1.5 rounded-full transition-all duration-500 ${
+          className={`inline-block w-1.5 h-1.5 rounded-full transition-[background-color,transform,box-shadow] duration-500 ${
             isPlaying ? 'bg-[#78dedc] shadow-[0_0_8px_#78dedc] scale-110' : 'bg-white/25 scale-90'
           }`}
         />

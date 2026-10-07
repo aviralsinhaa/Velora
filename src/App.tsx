@@ -11,26 +11,93 @@ import { DiscoverChapter } from './components/discover/DiscoverChapter';
 import { GettingHereChapter } from './components/logistics/GettingHereChapter';
 import { PlanEscapeSection } from './components/plan/PlanEscapeSection';
 import { Footer } from './components/footer/Footer';
-import { PrivateConciergeModal, ConciergeHandoffData } from './components/concierge/PrivateConciergeModal';
-import { BookingModal } from './components/booking/BookingModal';
-import { VillaDetailView } from './components/villas/VillaDetailView';
-import { CompareVillasView } from './components/villas/CompareVillasView';
-import { DiningDestinationView } from './components/dining/DiningDestinationView';
-import { WellnessDestinationView } from './components/wellness/WellnessDestinationView';
-import { ExperiencesDestinationView } from './components/experiences/ExperiencesDestinationView';
-import { GettingHereDestinationView } from './components/logistics/GettingHereDestinationView';
-import { PracticalInfoView } from './components/faq/PracticalInfoView';
+import type { ConciergeHandoffData } from './components/concierge/PrivateConciergeModal';
 import { veloraResort } from './data/resortConfig';
 import { ConciergeSourceContext, TripState } from './data/resortContext';
 import { oceanAudio, IslandSoundZone } from './utils/audio';
 import { Sparkles } from 'lucide-react';
 
+// Priority 3: Real Initial JS Code Splitting
 // Lazy load heavy Three.js 360 Viewer so it doesn't inflate initial critical bundle
 const Resort360Viewer = lazy(() =>
   import('./components/immersive/Resort360Viewer').catch(() =>
     import('./components/immersive/Resort360Viewer')
   )
 );
+
+// Lazy load PrivateConciergeModal to decouple heavy local engine from initial critical JS
+const PrivateConciergeModal = lazy(() =>
+  import('./components/concierge/PrivateConciergeModal').then((m) => ({
+    default: m.PrivateConciergeModal,
+  }))
+);
+
+// Lazy load transactional and deep destination views
+const BookingModal = lazy(() =>
+  import('./components/booking/BookingModal').then((m) => ({
+    default: m.BookingModal,
+  }))
+);
+
+const VillaDetailView = lazy(() =>
+  import('./components/villas/VillaDetailView').then((m) => ({
+    default: m.VillaDetailView,
+  }))
+);
+
+const CompareVillasView = lazy(() =>
+  import('./components/villas/CompareVillasView').then((m) => ({
+    default: m.CompareVillasView,
+  }))
+);
+
+const DiningDestinationView = lazy(() =>
+  import('./components/dining/DiningDestinationView').then((m) => ({
+    default: m.DiningDestinationView,
+  }))
+);
+
+const WellnessDestinationView = lazy(() =>
+  import('./components/wellness/WellnessDestinationView').then((m) => ({
+    default: m.WellnessDestinationView,
+  }))
+);
+
+const ExperiencesDestinationView = lazy(() =>
+  import('./components/experiences/ExperiencesDestinationView').then((m) => ({
+    default: m.ExperiencesDestinationView,
+  }))
+);
+
+const GettingHereDestinationView = lazy(() =>
+  import('./components/logistics/GettingHereDestinationView').then((m) => ({
+    default: m.GettingHereDestinationView,
+  }))
+);
+
+const PracticalInfoView = lazy(() =>
+  import('./components/faq/PracticalInfoView').then((m) => ({
+    default: m.PracticalInfoView,
+  }))
+);
+
+// Lightweight Luxury Suspense Fallback (Zero white flash, zero layout jump)
+function OverlayFallback() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading sanctuary view"
+      className="fixed inset-0 z-50 bg-[#04080f]/90 backdrop-blur-md flex items-center justify-center pointer-events-none select-none transition-opacity duration-300"
+    >
+      <div className="flex flex-col items-center gap-3">
+        <span className="w-2 h-2 rounded-full bg-[#dfcaa3] animate-ping" />
+        <span className="font-editorial text-sm tracking-[0.3em] uppercase text-[#dfcaa3]/80 font-light">
+          VELORA
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   // Modal & interactive states
@@ -41,9 +108,15 @@ export default function App() {
   const [bookingNotes, setBookingNotes] = useState<string | undefined>(undefined);
 
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+  const [hasConciergeOpened, setHasConciergeOpened] = useState(false);
   const [conciergePrompt, setConciergePrompt] = useState<string | undefined>(undefined);
   const [conciergeVillaId, setConciergeVillaId] = useState<string | undefined>(undefined);
   const [conciergeSourceContext, setConciergeSourceContext] = useState<ConciergeSourceContext>({ type: 'global' });
+
+  // Retain mounted concierge after initial open to preserve conversation history across 360 viewer transitions
+  useEffect(() => {
+    if (isConciergeOpen) setHasConciergeOpened(true);
+  }, [isConciergeOpen]);
 
   const [is360Open, setIs360Open] = useState(false);
   const [panoramaSceneId, setPanoramaSceneId] = useState<string | undefined>(undefined);
@@ -584,7 +657,19 @@ export default function App() {
   }, []);
 
   return (
-    <main className="relative min-h-screen bg-[#04080f] text-[#ece6dc] font-sans selection:bg-[#c4a97d]/30 selection:text-[#f8f5ee] overflow-x-hidden">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="relative min-h-screen bg-[#04080f] text-[#ece6dc] font-sans selection:bg-[#c4a97d]/30 selection:text-[#f8f5ee] overflow-x-hidden focus:outline-none"
+    >
+      {/* Accessibility: Skip to Content Link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-[#dfcaa3] focus:text-[#04080f] focus:font-sans focus:text-xs focus:uppercase focus:tracking-[0.2em] focus:rounded-full focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to content
+      </a>
+
       {/* Simplified Architectural Navigation with MegaMenu trigger */}
       <Navbar
         onOpenBooking={() => handleOpenBooking()}
@@ -695,7 +780,7 @@ export default function App() {
             handleOpenConcierge({ sourceContext: { type: 'global' } })
           }
           data-cursor="CONCIERGE"
-          className="group relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06101c]/95 hover:bg-[#dfcaa3] text-[#dfcaa3] hover:text-[#04080f] border border-[#c4a97d]/40 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+          className="group relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#06101c]/95 hover:bg-[#dfcaa3] text-[#dfcaa3] hover:text-[#04080f] border border-[#c4a97d]/40 backdrop-blur-xl shadow-2xl transition-[background-color,color,border-color,transform] duration-300 hover:scale-[1.02] active:scale-[0.98]"
           aria-label="Open Private Concierge"
           title="Private Concierge"
         >
@@ -706,68 +791,76 @@ export default function App() {
 
       {/* IMMERSIVE & TRANSACTIONAL OVERLAYS (No stacking) */}
 
-      {/* 1. Private Concierge */}
-      <PrivateConciergeModal
-        isOpen={isConciergeOpen}
-        initialPrompt={conciergePrompt}
-        initialVillaId={conciergeVillaId}
-        sourceContext={conciergeSourceContext}
-        launchTriggerId={conciergeTriggerId}
-        isResume={isConciergeResumed}
-        onClose={handleCloseConcierge}
-        onReserveHandoff={(data) => {
-          handleConciergeBookingHandoff(data);
-        }}
-        onOpen360Scene={(sceneId) => {
-          setIsConciergeResumed(true);
-          setIsConciergeOpen(false);
-          handleOpen360(sceneId, { type: 'concierge' });
-        }}
-        onSelectVillaInExplorer={(villaId) => {
-          setConciergeReturnOverlay(null);
-          setIsConciergeOpen(false);
-          if (villaId) {
-            handleOpenVillaDetail(villaId);
-          } else {
-            handleNavigateSection('stay');
-          }
-        }}
-        onCompareVillas={() => {
-          setConciergeReturnOverlay(null);
-          setIsConciergeOpen(false);
-          handleOpenCompareVillas();
-        }}
-        onNavigateSection={(sectionId) => {
-          setConciergeReturnOverlay(null);
-          setIsConciergeOpen(false);
-          handleNavigateSection(sectionId);
-        }}
-        onTripStateChange={handleTripStateChange}
-      />
+      {/* 1. Private Concierge (Code-split to remove engine from initial JS) */}
+      {hasConciergeOpened && (
+        <Suspense fallback={<OverlayFallback />}>
+          <PrivateConciergeModal
+            isOpen={isConciergeOpen}
+            initialPrompt={conciergePrompt}
+            initialVillaId={conciergeVillaId}
+            sourceContext={conciergeSourceContext}
+            launchTriggerId={conciergeTriggerId}
+            isResume={isConciergeResumed}
+            onClose={handleCloseConcierge}
+            onReserveHandoff={(data) => {
+              handleConciergeBookingHandoff(data);
+            }}
+            onOpen360Scene={(sceneId) => {
+              setIsConciergeResumed(true);
+              setIsConciergeOpen(false);
+              handleOpen360(sceneId, { type: 'concierge' });
+            }}
+            onSelectVillaInExplorer={(villaId) => {
+              setConciergeReturnOverlay(null);
+              setIsConciergeOpen(false);
+              if (villaId) {
+                handleOpenVillaDetail(villaId);
+              } else {
+                handleNavigateSection('stay');
+              }
+            }}
+            onCompareVillas={() => {
+              setConciergeReturnOverlay(null);
+              setIsConciergeOpen(false);
+              handleOpenCompareVillas();
+            }}
+            onNavigateSection={(sectionId) => {
+              setConciergeReturnOverlay(null);
+              setIsConciergeOpen(false);
+              handleNavigateSection(sectionId);
+            }}
+            onTripStateChange={handleTripStateChange}
+          />
+        </Suspense>
+      )}
 
-      {/* 2. Direct Stay Request Modal */}
-      <BookingModal
-        isOpen={isBookingOpen}
-        initialVillaId={bookingVillaId}
-        initialNights={bookingNights}
-        initialGuests={bookingGuests}
-        initialNotes={bookingNotes}
-        onClose={handleCloseBooking}
-        onOpenConcierge={(prompt, villaId) => {
-          setIsBookingOpen(false);
-          const targetVillaId = villaId || bookingVillaId;
-          handleOpenConcierge({
-            prompt,
-            villaId: targetVillaId,
-            sourceContext: targetVillaId ? { type: 'villa', id: targetVillaId } : { type: 'global' },
-            explicitReturn: { type: 'booking' },
-          });
-        }}
-      />
+      {/* 2. Direct Stay Request Modal (Code-split) */}
+      {isBookingOpen && (
+        <Suspense fallback={<OverlayFallback />}>
+          <BookingModal
+            isOpen={isBookingOpen}
+            initialVillaId={bookingVillaId}
+            initialNights={bookingNights}
+            initialGuests={bookingGuests}
+            initialNotes={bookingNotes}
+            onClose={handleCloseBooking}
+            onOpenConcierge={(prompt, villaId) => {
+              setIsBookingOpen(false);
+              const targetVillaId = villaId || bookingVillaId;
+              handleOpenConcierge({
+                prompt,
+                villaId: targetVillaId,
+                sourceContext: targetVillaId ? { type: 'villa', id: targetVillaId } : { type: 'global' },
+                explicitReturn: { type: 'booking' },
+              });
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* 3. Three.js Interactive 360 Panorama Modal (Code-split) */}
       {is360Open && (
-        <Suspense fallback={null}>
+        <Suspense fallback={<OverlayFallback />}>
           <Resort360Viewer
             initialSceneId={panoramaSceneId}
             onClose={handleClose360}
@@ -775,170 +868,184 @@ export default function App() {
         </Suspense>
       )}
 
-      {/* 4. Full Architectural Villa Dossier View */}
+      {/* 4. Full Architectural Villa Dossier View (Code-split) */}
       {activeDetailVilla && (
-        <VillaDetailView
-          villa={activeDetailVilla}
-          allVillas={veloraResort.villas}
-          onClose={handleCloseVillaDetail}
-          onRequestStay={(villaId, sourceFocusId) =>
-            handleOpenBooking(
-              villaId,
-              undefined,
-              {
-                type: 'villaDetail',
-                villaId: activeDetailVilla.id,
-              },
-              sourceFocusId || 'villa-detail-request-primary'
-            )
-          }
-          onOpen360={(sceneId, sourceFocusId) =>
-            handleOpen360(
-              sceneId,
-              {
-                type: 'villaDetail',
-                villaId: activeDetailVilla.id,
-              },
-              sourceFocusId || 'villa-detail-360'
-            )
-          }
-          onAskConcierge={(prompt, villaId, sourceFocusId) => {
-            const targetId = villaId || activeDetailVilla.id;
-            handleOpenConcierge({
-              prompt,
-              villaId: targetId,
-              sourceContext: { type: 'villa', id: targetId },
-              explicitReturn: { type: 'villaDetail', villaId: activeDetailVilla.id },
-              sourceFocusId: sourceFocusId || 'villa-detail-concierge-header',
-            });
-          }}
-          onCompareVillas={handleOpenCompareVillas}
-          onSelectOtherVilla={(villaId) => setDetailVillaId(villaId)}
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <VillaDetailView
+            villa={activeDetailVilla}
+            allVillas={veloraResort.villas}
+            onClose={handleCloseVillaDetail}
+            onRequestStay={(villaId, sourceFocusId) =>
+              handleOpenBooking(
+                villaId,
+                undefined,
+                {
+                  type: 'villaDetail',
+                  villaId: activeDetailVilla.id,
+                },
+                sourceFocusId || 'villa-detail-request-primary'
+              )
+            }
+            onOpen360={(sceneId, sourceFocusId) =>
+              handleOpen360(
+                sceneId,
+                {
+                  type: 'villaDetail',
+                  villaId: activeDetailVilla.id,
+                },
+                sourceFocusId || 'villa-detail-360'
+              )
+            }
+            onAskConcierge={(prompt, villaId, sourceFocusId) => {
+              const targetId = villaId || activeDetailVilla.id;
+              handleOpenConcierge({
+                prompt,
+                villaId: targetId,
+                sourceContext: { type: 'villa', id: targetId },
+                explicitReturn: { type: 'villaDetail', villaId: activeDetailVilla.id },
+                sourceFocusId: sourceFocusId || 'villa-detail-concierge-header',
+              });
+            }}
+            onCompareVillas={handleOpenCompareVillas}
+            onSelectOtherVilla={(villaId) => setDetailVillaId(villaId)}
+          />
+        </Suspense>
       )}
 
-      {/* 5. Architectural Comparison Matrix View */}
+      {/* 5. Architectural Comparison Matrix View (Code-split) */}
       {isCompareVillasOpen && (
-        <CompareVillasView
-          villas={veloraResort.villas}
-          onClose={() => setIsCompareVillasOpen(false)}
-          onSelectVilla={(villaId) => handleOpenVillaDetail(villaId, true, `compare-view-${villaId}`)}
-          onRequestStay={(villaId) =>
-            handleOpenBooking(
-              villaId,
-              undefined,
-              { type: 'compareVillas' },
-              `compare-request-${villaId}`
-            )
-          }
-          onAskConcierge={(prompt) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: { type: 'global' },
-              explicitReturn: { type: 'compareVillas' },
-              sourceFocusId: 'compare-concierge',
-            })
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <CompareVillasView
+            villas={veloraResort.villas}
+            onClose={() => setIsCompareVillasOpen(false)}
+            onSelectVilla={(villaId) => handleOpenVillaDetail(villaId, true, `compare-view-${villaId}`)}
+            onRequestStay={(villaId) =>
+              handleOpenBooking(
+                villaId,
+                undefined,
+                { type: 'compareVillas' },
+                `compare-request-${villaId}`
+              )
+            }
+            onAskConcierge={(prompt) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: { type: 'global' },
+                explicitReturn: { type: 'compareVillas' },
+                sourceFocusId: 'compare-concierge',
+              })
+            }
+          />
+        </Suspense>
       )}
 
-      {/* 6. Culinary Destinations View */}
+      {/* 6. Culinary Destinations View (Code-split) */}
       {isDiningOpen && (
-        <DiningDestinationView
-          onClose={() => setIsDiningOpen(false)}
-          onAskConcierge={(prompt, context) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: context || { type: 'dining', id: 'dining-general' },
-              explicitReturn: { type: 'dining' },
-              sourceFocusId:
-                context && 'id' in context && context.id !== 'dining-general'
-                  ? `dining-venue-concierge-${context.id}`
-                  : 'dining-concierge',
-            })
-          }
-          onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'dining' }, 'dining-request')
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <DiningDestinationView
+            onClose={() => setIsDiningOpen(false)}
+            onAskConcierge={(prompt, context) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: context || { type: 'dining', id: 'dining-general' },
+                explicitReturn: { type: 'dining' },
+                sourceFocusId:
+                  context && 'id' in context && context.id !== 'dining-general'
+                    ? `dining-venue-concierge-${context.id}`
+                    : 'dining-concierge',
+              })
+            }
+            onRequestStay={(notes) =>
+              handleOpenBooking(undefined, notes, { type: 'dining' }, 'dining-request')
+            }
+          />
+        </Suspense>
       )}
 
-      {/* 7. Wellness & The Water Pavilion View */}
+      {/* 7. Wellness & The Water Pavilion View (Code-split) */}
       {isWellnessOpen && (
-        <WellnessDestinationView
-          onClose={() => setIsWellnessOpen(false)}
-          onAskConcierge={(prompt, context) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: context || { type: 'wellness', id: 'water-pavilion' },
-              explicitReturn: { type: 'wellness' },
-              sourceFocusId:
-                context && 'id' in context && context.id !== 'water-pavilion'
-                  ? `wellness-ritual-concierge-${context.id}`
-                  : 'wellness-concierge',
-            })
-          }
-          onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'wellness' }, 'wellness-request')
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <WellnessDestinationView
+            onClose={() => setIsWellnessOpen(false)}
+            onAskConcierge={(prompt, context) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: context || { type: 'wellness', id: 'water-pavilion' },
+                explicitReturn: { type: 'wellness' },
+                sourceFocusId:
+                  context && 'id' in context && context.id !== 'water-pavilion'
+                    ? `wellness-ritual-concierge-${context.id}`
+                    : 'wellness-concierge',
+              })
+            }
+            onRequestStay={(notes) =>
+              handleOpenBooking(undefined, notes, { type: 'wellness' }, 'wellness-request')
+            }
+          />
+        </Suspense>
       )}
 
-      {/* 8. Reef & Ocean Expeditions View */}
+      {/* 8. Reef & Ocean Expeditions View (Code-split) */}
       {isExperiencesOpen && (
-        <ExperiencesDestinationView
-          onClose={() => setIsExperiencesOpen(false)}
-          onAskConcierge={(prompt, context) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: context || { type: 'experience', id: 'experience-general' },
-              explicitReturn: { type: 'experiences' },
-              sourceFocusId:
-                context && 'id' in context && context.id !== 'experience-general'
-                  ? `experiences-concierge-${context.id}`
-                  : 'experiences-concierge',
-            })
-          }
-          onRequestStay={(notes) =>
-            handleOpenBooking(undefined, notes, { type: 'experiences' }, 'experiences-request')
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <ExperiencesDestinationView
+            onClose={() => setIsExperiencesOpen(false)}
+            onAskConcierge={(prompt, context) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: context || { type: 'experience', id: 'experience-general' },
+                explicitReturn: { type: 'experiences' },
+                sourceFocusId:
+                  context && 'id' in context && context.id !== 'experience-general'
+                    ? `experiences-concierge-${context.id}`
+                    : 'experiences-concierge',
+              })
+            }
+            onRequestStay={(notes) =>
+              handleOpenBooking(undefined, notes, { type: 'experiences' }, 'experiences-request')
+            }
+          />
+        </Suspense>
       )}
 
-      {/* 9. Travel Logistics & Lounge View */}
+      {/* 9. Travel Logistics & Lounge View (Code-split) */}
       {isGettingHereOpen && (
-        <GettingHereDestinationView
-          onClose={() => setIsGettingHereOpen(false)}
-          onAskConcierge={(prompt) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: { type: 'gettingHere' },
-              explicitReturn: { type: 'gettingHere' },
-              sourceFocusId: 'getting-here-concierge',
-            })
-          }
-          onRequestStay={() =>
-            handleOpenBooking(undefined, undefined, { type: 'gettingHere' }, 'getting-here-request')
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <GettingHereDestinationView
+            onClose={() => setIsGettingHereOpen(false)}
+            onAskConcierge={(prompt) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: { type: 'gettingHere' },
+                explicitReturn: { type: 'gettingHere' },
+                sourceFocusId: 'getting-here-concierge',
+              })
+            }
+            onRequestStay={() =>
+              handleOpenBooking(undefined, undefined, { type: 'gettingHere' }, 'getting-here-request')
+            }
+          />
+        </Suspense>
       )}
 
-      {/* 10. Practical Information & FAQ View */}
+      {/* 10. Practical Information & FAQ View (Code-split) */}
       {isPracticalInfoOpen && (
-        <PracticalInfoView
-          onClose={() => setIsPracticalInfoOpen(false)}
-          onAskConcierge={(prompt) =>
-            handleOpenConcierge({
-              prompt,
-              sourceContext: { type: 'practicalInfo' },
-              explicitReturn: { type: 'practicalInfo' },
-              sourceFocusId: 'practical-info-concierge',
-            })
-          }
-          onRequestStay={() =>
-            handleOpenBooking(undefined, undefined, { type: 'practicalInfo' }, 'practical-info-request')
-          }
-        />
+        <Suspense fallback={<OverlayFallback />}>
+          <PracticalInfoView
+            onClose={() => setIsPracticalInfoOpen(false)}
+            onAskConcierge={(prompt) =>
+              handleOpenConcierge({
+                prompt,
+                sourceContext: { type: 'practicalInfo' },
+                explicitReturn: { type: 'practicalInfo' },
+                sourceFocusId: 'practical-info-concierge',
+              })
+            }
+            onRequestStay={() =>
+              handleOpenBooking(undefined, undefined, { type: 'practicalInfo' }, 'practical-info-request')
+            }
+          />
+        </Suspense>
       )}
     </main>
   );

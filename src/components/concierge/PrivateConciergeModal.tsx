@@ -21,6 +21,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 export interface ConciergeHandoffData {
   villaId?: string;
@@ -519,7 +520,7 @@ export function PrivateConciergeModal({
 
       {/* RIGHT-SIDE ATELIER DRAWER (Desktop: slide-over panel; Mobile: full-screen 100dvh) */}
       <aside
-        className={`velora-drawer-in fixed top-0 right-0 bottom-0 z-10 h-[100dvh] max-h-[100dvh] bg-[#04080f] border-l border-white/10 shadow-[-24px_0_80px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden transition-all duration-500 ease-out ${
+        className={`velora-drawer-in fixed top-0 right-0 bottom-0 z-10 h-[100dvh] max-h-[100dvh] bg-[#04080f] border-l border-white/10 shadow-[-24px_0_80px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden transition-[width] duration-500 ease-out ${
           hasItinerary
             ? 'w-full sm:w-[620px] md:w-[740px] lg:w-[880px] xl:w-[960px]'
             : 'w-full sm:w-[540px] md:w-[600px] lg:w-[660px]'
@@ -605,7 +606,7 @@ export function PrivateConciergeModal({
         <div className="relative z-10 flex-1 flex overflow-hidden min-h-0">
           {/* ZONE 1: Conversation Region */}
           <div
-            className={`flex flex-col h-full min-h-0 border-r border-white/10 bg-[#04080f]/95 transition-all duration-500 ease-out ${
+            className={`flex flex-col h-full min-h-0 border-r border-white/10 bg-[#04080f]/95 transition-[width,opacity] duration-500 ease-out ${
               hasItinerary
                 ? 'w-full lg:w-[44%]'
                 : 'w-full lg:w-[62%]'
@@ -623,7 +624,7 @@ export function PrivateConciergeModal({
                   <div className="space-y-3">
                     <div className="inline-flex items-center gap-2">
                       <span className="text-[10px] uppercase tracking-[0.3em] text-[#dfcaa3] font-sans font-medium">
-                        VELORA ✦
+                         VELORA ✦
                       </span>
                     </div>
                     <h2 className="font-editorial text-3xl sm:text-4xl text-white font-light leading-snug">
@@ -644,10 +645,10 @@ export function PrivateConciergeModal({
                           aria-label={`Ask: ${q}`}
                           className="w-full py-3.5 flex items-center justify-between group text-left transition-colors"
                         >
-                          <span className="text-xs sm:text-sm font-sans text-white/80 group-hover:text-[#dfcaa3] transition-all transform group-hover:translate-x-1 duration-200">
+                          <span className="text-xs sm:text-sm font-sans text-white/80 group-hover:text-[#dfcaa3] transition-colors transform group-hover:translate-x-1 duration-200">
                             {q}
                           </span>
-                          <ArrowRight className="w-3.5 h-3.5 text-white/30 group-hover:text-[#dfcaa3] transform group-hover:translate-x-1 transition-all duration-200 shrink-0 ml-3" />
+                          <ArrowRight className="w-3.5 h-3.5 text-white/30 group-hover:text-[#dfcaa3] transform group-hover:translate-x-1 transition-colors duration-200 shrink-0 ml-3" />
                         </button>
                       ))}
                     </div>
@@ -680,9 +681,11 @@ export function PrivateConciergeModal({
                             return (
                               <div className="mt-4 space-y-3">
                                 <div className="aspect-[16/9] overflow-hidden rounded-lg relative border border-white/10">
-                                  <img
+                                  <ResponsiveImage
                                     src={recVilla.featuredImage}
                                     alt={recVilla.name}
+                                    loading="lazy"
+                                    sizes="(max-width: 640px) 100vw, 420px"
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
@@ -749,7 +752,7 @@ export function PrivateConciergeModal({
                                     notes: m.bookingAction?.checkInNote || tripState.notes,
                                   });
                                 }}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-all shadow-[0_0_16px_rgba(223,202,163,0.25)] hover:scale-105 active:scale-95"
+                                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.2em] font-medium transition-[background-color,color,transform,box-shadow] duration-200 shadow-[0_0_16px_rgba(223,202,163,0.25)] hover:scale-105 active:scale-95"
                               >
                                 <span>{m.bookingAction?.villaId || tripState.selectedVillaId ? 'REQUEST THIS VILLA' : 'REQUEST YOUR STAY'}</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
@@ -764,7 +767,7 @@ export function PrivateConciergeModal({
                                 onClick={() => {
                                   onOpen360Scene(currentVilla.panoramaSceneId!);
                                 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#dfcaa3]/50 bg-[#dfcaa3]/10 hover:bg-[#dfcaa3]/20 text-[#dfcaa3] text-xs font-sans uppercase tracking-[0.18em] transition-all"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#dfcaa3]/50 bg-[#dfcaa3]/10 hover:bg-[#dfcaa3]/20 text-[#dfcaa3] text-xs font-sans uppercase tracking-[0.18em] transition-colors"
                               >
                                 <Compass className="w-3.5 h-3.5" />
                                 <span>LAUNCH 360° TOUR</span>
@@ -779,7 +782,7 @@ export function PrivateConciergeModal({
                                 <button
                                   key={aIdx}
                                   onClick={() => handleActionClick(action)}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 hover:border-[#dfcaa3] bg-white/[0.03] hover:bg-[#dfcaa3]/10 text-white/80 hover:text-[#dfcaa3] text-[9.5px] uppercase tracking-[0.2em] font-sans transition-all duration-200"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 hover:border-[#dfcaa3] bg-white/[0.03] hover:bg-[#dfcaa3]/10 text-white/80 hover:text-[#dfcaa3] text-[9.5px] uppercase tracking-[0.2em] font-sans transition-colors duration-200"
                                 >
                                   <span>{action.label}</span>
                                 </button>
@@ -835,7 +838,7 @@ export function PrivateConciergeModal({
                 <button
                   type="submit"
                   disabled={!inputText.trim() || isThinking}
-                  className="absolute right-1.5 p-2 rounded-full bg-[#dfcaa3] text-[#04080f] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#f0e2c8] transition-all"
+                  className="absolute right-1.5 p-2 rounded-full bg-[#dfcaa3] text-[#04080f] disabled:opacity-30 disabled:cursor-not-allowed hover:bg-[#f0e2c8] transition-colors"
                   aria-label="Send message"
                 >
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -942,7 +945,7 @@ export function PrivateConciergeModal({
                 </span>
                 <button
                   onClick={handleReserveNow}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all shadow-[0_0_20px_rgba(223,202,163,0.25)] hover:scale-105"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-[background-color,color,transform,box-shadow] duration-200 shadow-[0_0_20px_rgba(223,202,163,0.25)] hover:scale-105"
                 >
                   <span>{tripState.selectedVillaId ? 'REQUEST THIS VILLA' : 'REQUEST YOUR STAY'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -991,7 +994,7 @@ export function PrivateConciergeModal({
                     </div>
                     <button
                       onClick={handleReserveNow}
-                      className="w-full py-2.5 rounded-lg bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-[10px] uppercase tracking-[0.2em] font-medium transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(223,202,163,0.2)]"
+                      className="w-full py-2.5 rounded-lg bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-[10px] uppercase tracking-[0.2em] font-medium transition-colors flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(223,202,163,0.2)]"
                     >
                       <span>REQUEST THIS VILLA</span>
                       <ArrowRight className="w-3 h-3" />
@@ -1017,7 +1020,7 @@ export function PrivateConciergeModal({
                     </div>
                     <button
                       onClick={handleReserveNow}
-                      className="w-full py-2.5 rounded-lg bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-[10px] uppercase tracking-[0.2em] font-medium transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(223,202,163,0.2)]"
+                      className="w-full py-2.5 rounded-lg bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-[10px] uppercase tracking-[0.2em] font-medium transition-colors flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(223,202,163,0.2)]"
                     >
                       <span>REQUEST YOUR STAY</span>
                       <ArrowRight className="w-3 h-3" />

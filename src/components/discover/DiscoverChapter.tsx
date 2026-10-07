@@ -377,9 +377,11 @@ export function DiscoverChapter() {
 
           {/* Centered Expanded Image */}
           <div className="relative flex-1 flex items-center justify-center my-4 overflow-hidden">
-            <img
+            <ResponsiveImage
               src={pieces[lightboxIndex].image}
               alt={pieces[lightboxIndex].title}
+              priority={true}
+              sizes="(max-width: 1024px) 100vw, 1400px"
               className="max-h-[78vh] max-w-full object-contain rounded-lg shadow-2xl"
             />
           </div>

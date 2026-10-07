@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { useScrollMotion } from '../../hooks/useScrollMotion';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 import gsap from 'gsap';
 
 interface PlanEscapeSectionProps {
@@ -168,7 +169,7 @@ export function PlanEscapeSection({ onOpenConcierge, onOpenBooking }: PlanEscape
               <button
                 onClick={() => onOpenConcierge()}
                 data-cursor="CONCIERGE"
-                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-all duration-300 shadow-[0_0_24px_rgba(223,202,163,0.25)] hover:scale-[1.01] active:scale-[0.99] text-center"
+                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] font-sans text-xs uppercase tracking-[0.22em] font-medium transition-[background-color,color,transform,box-shadow] duration-300 shadow-[0_0_24px_rgba(223,202,163,0.25)] hover:scale-[1.01] active:scale-[0.99] text-center"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>OPEN PRIVATE CONCIERGE ✦</span>
@@ -230,9 +231,10 @@ export function PlanEscapeSection({ onOpenConcierge, onOpenBooking }: PlanEscape
 
                   {/* Villa Thumbnail Card */}
                   <div className="mt-3 rounded-xl overflow-hidden border border-white/10 bg-[#04080f]/80 flex flex-col sm:flex-row items-center gap-4 p-3">
-                    <img
+                    <ResponsiveImage
                       src={RESORT_MEDIA.villas.sunsetPoolVilla.hero}
                       alt="Sunset Pool Villa"
+                      sizes="(max-width: 640px) 100vw, 112px"
                       className="w-full sm:w-28 h-20 object-cover rounded-lg velora-image-grade shrink-0"
                       loading="lazy"
                     />
@@ -269,7 +271,7 @@ export function PlanEscapeSection({ onOpenConcierge, onOpenBooking }: PlanEscape
                 </div>
                 <button
                   onClick={() => onOpenConcierge('Plan five nights for two with sunset views in December.')}
-                  className="w-full py-2.5 rounded-lg border border-[#c4a97d]/30 hover:border-[#dfcaa3] bg-[#c4a97d]/5 hover:bg-[#c4a97d]/15 text-[#dfcaa3] text-[10.5px] uppercase tracking-[0.22em] font-sans transition-all text-center block"
+                  className="w-full py-2.5 rounded-lg border border-[#c4a97d]/30 hover:border-[#dfcaa3] bg-[#c4a97d]/5 hover:bg-[#c4a97d]/15 text-[#dfcaa3] text-[10.5px] uppercase tracking-[0.22em] font-sans transition-colors text-center block"
                 >
                   START CONCIERGE SESSION →
                 </button>

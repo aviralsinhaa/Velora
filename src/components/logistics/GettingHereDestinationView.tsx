@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { RESORT_MEDIA } from '../../data/mediaAssets';
 import { ArrowLeft, Plane, Clock, ShieldCheck, Sparkles, X, Luggage } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
 
 interface GettingHereDestinationViewProps {
   onClose: () => void;
@@ -90,7 +91,7 @@ export function GettingHereDestinationView({
             onClick={() => onAskConcierge('How does the seaplane transfer to Velora work?')}
             data-cursor="CONCIERGE"
             data-focus-id="getting-here-concierge"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -99,7 +100,7 @@ export function GettingHereDestinationView({
           <button
             onClick={onRequestStay}
             data-focus-id="getting-here-request"
-            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-all"
+            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-colors"
           >
             REQUEST YOUR STAY
           </button>
@@ -132,10 +133,11 @@ export function GettingHereDestinationView({
           </div>
 
           <div className="rounded-2xl overflow-hidden border border-white/10 aspect-[16/10] sm:aspect-[21/9] w-full shadow-2xl bg-[#06101c]">
-            <img
+            <ResponsiveImage
               src={RESORT_MEDIA.arrival.seaplaneLagoon}
               alt="Seaplane flight over Maldivian coral atolls"
-              loading="lazy"
+              priority={true}
+              sizes="(max-width: 1024px) 100vw, 1200px"
               className="w-full h-full object-cover velora-image-grade"
             />
           </div>

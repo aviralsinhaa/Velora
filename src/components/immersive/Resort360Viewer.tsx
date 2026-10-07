@@ -289,7 +289,7 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
 
         <button
           onClick={onClose}
-          className="pointer-events-auto p-2.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white transition-all hover:scale-105"
+          className="pointer-events-auto p-2.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white transition-[background-color,transform] hover:scale-105"
           aria-label="Close 360 viewer"
         >
           <X className="w-5 h-5" />
@@ -320,7 +320,7 @@ export function Resort360Viewer({ initialSceneId, onClose }: Resort360ViewerProp
                 onClick={() => handleSelectScene(scene)}
                 aria-label={`Switch panorama to ${scene.title}`}
                 aria-pressed={isActive}
-                className={`px-3.5 py-2 rounded-xl border text-left transition-all shrink-0 flex items-center gap-2.5 ${
+                className={`px-3.5 py-2 rounded-xl border text-left transition-colors shrink-0 flex items-center gap-2.5 ${
                   isActive
                     ? 'bg-[#dfcaa3] text-[#04080f] border-[#dfcaa3]'
                     : 'bg-black/60 hover:bg-black/80 text-white/80 border-white/20 backdrop-blur-md'

@@ -182,7 +182,7 @@ export function ArrivalChapter({
         >
           <div className="relative flex flex-col items-center text-center px-6">
             <div
-              className={`relative w-20 h-20 rounded-full border border-[#c4a97d]/35 flex items-center justify-center mb-6 overflow-hidden transition-all duration-1000 ${
+              className={`relative w-20 h-20 rounded-full border border-[#c4a97d]/35 flex items-center justify-center mb-6 overflow-hidden transition-[opacity,transform] duration-1000 ${
                 loadingState === 'monogram' ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
               }`}
             >
@@ -191,7 +191,7 @@ export function ArrivalChapter({
             </div>
 
             <h2
-              className={`font-editorial text-2xl sm:text-3xl text-white tracking-[0.38em] font-light transition-all duration-1000 ${
+              className={`font-editorial text-2xl sm:text-3xl text-white tracking-[0.38em] font-light transition-[opacity,transform] duration-1000 ${
                 loadingState === 'monogram' ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
               }`}
             >

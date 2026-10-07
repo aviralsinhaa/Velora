@@ -99,7 +99,7 @@ export function PracticalInfoView({
             onClick={() => onAskConcierge('I have a practical question about traveling to Velora.')}
             data-cursor="CONCIERGE"
             data-focus-id="practical-info-concierge"
-            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-all"
+            className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-[11px] uppercase tracking-[0.2em] font-sans transition-colors"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span>Ask Concierge</span>
@@ -108,7 +108,7 @@ export function PracticalInfoView({
           <button
             onClick={onRequestStay}
             data-focus-id="practical-info-request"
-            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-all"
+            className="px-5 py-2 rounded-full bg-[#dfcaa3] hover:bg-[#f0e2c8] text-[#04080f] text-[11px] uppercase tracking-[0.2em] font-sans font-medium transition-colors"
           >
             REQUEST YOUR STAY
           </button>
@@ -180,7 +180,7 @@ export function PracticalInfoView({
           <div className="pt-2">
             <button
               onClick={() => onAskConcierge('I have a question about staying at Velora.')}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-xs uppercase tracking-[0.2em] font-sans transition-all"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#c4a97d]/40 text-[#dfcaa3] hover:bg-[#dfcaa3]/10 text-xs uppercase tracking-[0.2em] font-sans transition-colors"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Ask Private Concierge ✦</span>
